@@ -51,3 +51,52 @@ header:not(.scrolled){background:transparent;border-bottom-color:transparent}.he
 .hero-scroll.scroll-enabled{height:260svh}.scroll-enabled .hero{position:sticky;top:0;min-height:560px;height:100svh}.scroll-enabled .hero-reveal{position:absolute;z-index:4;left:56%;top:29%;width:39%;padding:0;background:none;opacity:0;transform:translateX(55px)}.scroll-enabled .hero-reveal h2{font-size:clamp(54px,5.5vw,88px)}.scroll-enabled .hero-landscape{transform-origin:65% 55%}.scroll-enabled .hero-product-stage{will-change:transform}.scroll-enabled .hero-copy,.scroll-enabled .hero-reveal{will-change:transform,opacity}
 }
 @media(prefers-reduced-motion:reduce){.hero-scroll{height:auto!important}.hero{position:relative!important}.hero-reveal{opacity:1!important;transform:none!important}.hero-foreground{transform:none!important}}
+/* Mobile opening: opaque product, compact copy, and a lower snow frame. */
+@media(max-width:600px){
+ .hero{height:760px;height:clamp(680px,100svh,800px);min-height:680px}
+ .hero-copy{left:5%;top:150px;max-width:90%;z-index:auto}
+ .hero-copy .eyebrow{position:relative;z-index:1;font-size:8px;letter-spacing:1.25px;margin-bottom:22px}
+ .hero-copy h1{position:relative;z-index:1;font-size:clamp(58px,14.5vw,78px);line-height:.88;letter-spacing:-1.8px}
+ .hero-copy .intro{position:relative;z-index:4;font-size:13px;margin:18px 0;max-width:170px}
+ .hero-copy .button{position:relative;z-index:4;min-height:46px;padding:13px 15px;gap:22px;font-size:10px}
+ .hero-copy .button span{font-size:17px}
+ .hero-product-stage{inset:auto;left:10%;right:auto;top:225px;bottom:auto;width:100%;height:auto;max-height:none;aspect-ratio:1339/1175;translate:none;opacity:1;z-index:2}
+ .hero-jacket{object-position:center;filter:drop-shadow(0 10px 14px #52667b25)}
+ .hero-foreground{width:160%;left:-30%;height:auto;bottom:calc(30px - 28vw);z-index:3}
+ .hero-shadow{opacity:.4}
+}
+@media(max-width:380px){.hero-copy{top:130px}.hero-product-stage{top:220px;left:6%;width:108%}.hero-copy .eyebrow{font-size:7px}.hero-copy .intro{font-size:12px}}
+@media(max-width:600px){.hero-copy h1{font-size:clamp(50px,13vw,70px)}.hero-product-stage{left:4%;width:110%}.hero-foreground{bottom:calc(75px - 28vw)}}
+@media(max-width:380px){.hero-copy h1{font-size:48px}.hero-product-stage{left:2%;width:112%}}
+/* Mobile navigation and product-first layering. */
+.mobile-menu-toggle,.mobile-menu{display:none}
+@media(max-width:600px){
+ header>nav:not(.mobile-menu){display:none}
+ .mobile-menu-toggle{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:44px;padding:8px 3px;border:0;background:transparent;color:var(--ink);font-size:13px;font-weight:600}
+ .mobile-menu-toggle span{font-size:22px;transition:transform .2s}
+ .mobile-menu-toggle[aria-expanded="true"] span{transform:rotate(45deg)}
+ .mobile-menu:not([hidden]){display:flex;position:absolute;top:76px;left:5%;right:5%;padding:12px 20px;flex-direction:column;align-items:stretch;gap:0;background:#f5f4effa;box-shadow:0 12px 25px #17222a18}
+ .mobile-menu a{display:block!important;padding:16px 0;font-size:15px;border-bottom:1px solid #17222a20}
+ .mobile-menu a:last-child{border-bottom:0}
+ .hero-copy{top:130px}
+ .hero-copy .button{z-index:1;min-height:44px;padding:10px 10px;gap:12px;font-size:12px}
+ .hero-copy .intro{z-index:1;margin:16px 0}
+}
+@media(max-width:380px){.hero-copy{top:115px}.hero-copy .button{font-size:11px;gap:10px;padding:10px 8px}}
+.nav-buy{border:0;background:var(--ink);color:var(--paper);padding:13px 18px;font-size:12px;min-height:44px;white-space:nowrap}#purchase-dialog{width:min(860px,92vw);max-width:860px;max-height:90svh;padding:45px;overflow:auto}.purchase-grid{display:grid;grid-template-columns:1fr 1fr;gap:35px;align-items:center}.purchase-grid>img{width:100%;background:#e9edef}.purchase-grid h2{font-size:64px}.purchase-grid fieldset{border:0;padding:0;margin:28px 0 20px}.purchase-grid legend{font-size:13px;font-weight:600;margin-bottom:12px}.size-options{display:flex;gap:10px}.size-options label{position:relative;cursor:pointer}.size-options input{position:absolute;opacity:0;width:100%;height:100%;margin:0}.size-options span{display:grid;place-items:center;width:48px;height:46px;border:1px solid #9ba9b1;font-size:13px}.size-options input:checked+span{background:var(--ink);color:white;border-color:var(--ink)}.size-options input:focus-visible+span{outline:3px solid #2365c9;outline-offset:3px}.purchase-note{font-size:11px!important;color:#5d6971}.purchase-grid [hidden]{display:none}#purchase-success h3{font-size:25px;margin-top:25px}
+@media(max-width:600px){.mobile-menu-toggle{gap:0;padding:8px 3px;min-width:44px;justify-content:center}.mobile-menu .nav-buy{margin:10px 0}.purchase-grid{grid-template-columns:1fr;gap:18px}#purchase-dialog{padding:40px 22px 24px}.purchase-grid>img{height:160px;object-fit:contain}.purchase-grid h2{font-size:48px}.purchase-grid .eyebrow{margin-bottom:15px}.purchase-grid fieldset{margin:18px 0}.purchase-grid p{margin:12px 0}}
+/* Desktop purchase CTAs: stronger labels with less empty space. */
+@media(min-width:601px){
+ .hero-copy .button,.hero-reveal .button{padding:11px 15px;gap:24px;min-height:46px;font-size:16px;line-height:1.4;font-weight:700}
+ .hero-copy .button span,.hero-reveal .button span{font-size:20px}
+ header .nav-buy{padding:10px 13px;font-size:14px;line-height:1.4;font-weight:700;min-height:44px}
+}
+.purchase-gallery{min-width:0}.purchase-gallery>img{display:block;width:100%;aspect-ratio:1;object-fit:contain;background:#e9edef}.purchase-thumbnails{display:flex;gap:10px;margin-top:12px}.purchase-thumbnails button{width:64px;padding:3px;border:1px solid transparent;background:transparent;color:var(--ink)}.purchase-thumbnails button[aria-pressed="true"]{border-color:var(--ink)}.purchase-thumbnails img{display:block;width:100%;height:54px;object-fit:contain;background:#e9edef}.purchase-thumbnails span{display:block;font-size:10px;margin-top:5px}.purchase-thumbnails button:hover{background:#dde6eb}
+@media(max-width:600px){.purchase-gallery>img{height:180px;aspect-ratio:auto}.purchase-thumbnails{justify-content:center;margin-top:8px;gap:12px}.purchase-thumbnails button{width:58px}.purchase-thumbnails img{height:40px}}
+.footer-credits{max-width:560px}.footer-credits p{line-height:1.6}
+/* Give the primary desktop hero action more presence without excess padding. */
+@media(min-width:601px){
+ .hero-copy .button{min-width:160px;min-height:54px;padding:12px 16px;gap:26px;font-size:18px;font-weight:700}
+ .hero-copy .button span{font-size:22px}
+}
+.product-name{font-size:16px;font-weight:600;margin:22px 0 0}.product-name+.product-description{margin-top:12px}
