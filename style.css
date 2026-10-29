@@ -14,8 +14,8 @@ header:not(.scrolled){background:transparent;border-bottom-color:transparent}.he
 
 /* Quiet alpine atmosphere keeps the garment in the foreground. */
 .hero-landscape{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0}
-.hero-mountains{position:absolute;width:110%;height:45%;left:-5%;bottom:3%;object-fit:fill;opacity:.32;filter:blur(.4px);mask-image:linear-gradient(to right,transparent 0%,#0008 25%,#000 62%);user-select:none}
-.hero-mist{position:absolute;left:-8%;right:-8%;bottom:0;height:33%;background:radial-gradient(ellipse at 72% 48%,#e2eaf0b3,transparent 60%),linear-gradient(0deg,#c1d0dfe6,transparent 90%);filter:blur(15px)}
+.hero-mountains{position:absolute;width:110%;height:65%;left:-5%;bottom:1%;object-fit:cover;object-position:center top;opacity:.58;filter:none;mask-image:linear-gradient(to bottom,transparent 0%,#000 32%,#000 78%,transparent 100%),linear-gradient(to right,#0004 0%,#0006 40%,#000 65%);mask-composite:intersect;user-select:none}
+.hero-mist{position:absolute;left:-8%;right:-8%;bottom:-2%;height:19%;background:radial-gradient(ellipse at 72% 65%,#dfe8ef66,transparent 65%),linear-gradient(0deg,#c1d0df99,transparent 80%);filter:blur(12px)}
 .hero-product-stage{inset:115px 2% 110px 42%;z-index:1}.hero-jacket{height:100%;object-position:center bottom}
 .hero-shadow{bottom:-12px;left:22%;width:56%;height:28px;opacity:.7;filter:blur(9px);background:radial-gradient(ellipse,#41577670,#52698525 45%,transparent 72%)}
 .hero-shadow:after{content:"";position:absolute;inset:7px 22%;border-radius:50%;background:#40577355;filter:blur(4px)}
@@ -25,3 +25,5 @@ header:not(.scrolled){background:transparent;border-bottom-color:transparent}.he
 @media(prefers-reduced-motion:reduce){.hero-mountains,.hero-mist{transform:none!important}}
 
 @media(min-width:601px){.hero-product-stage{inset:auto 0 auto 40%;top:50%;height:auto;aspect-ratio:1339/1175;translate:0 -43%}.hero-jacket{object-position:center}.hero-shadow{bottom:-10px}}
+
+@media(min-width:601px){.hero-product-stage{left:auto;right:1%;width:min(60%,calc((100svh - 180px)*1.1396));max-height:calc(100svh - 180px);top:50%;translate:0 -43%}}
