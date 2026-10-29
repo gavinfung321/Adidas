@@ -44,3 +44,10 @@ header:not(.scrolled){background:transparent;border-bottom-color:transparent}.he
 
 .hero-foreground{height:auto;bottom:calc(85px - 19vw);object-fit:contain}.hero-bottom{background:#e8eff5d9;padding:10px 14px;bottom:12px;text-shadow:none;backdrop-filter:blur(6px)}
 @media(max-width:600px){.hero-foreground{width:160%;left:-30%;bottom:calc(75px - 28vw)}}
+/* A short native sticky scene. The jacket and copy stay independent of the landscape. */
+.hero-scroll{position:relative}.hero-reveal{padding:100px 7%;background:#d2dfe8;color:#17252d}.hero-reveal h2{font-size:clamp(54px,5.6vw,90px);line-height:.95;margin:24px 0}.hero-reveal p:not(.eyebrow){font-size:18px;line-height:1.7;margin:25px 0 30px}.hero-copy{animation:none!important}.hero-mountains{opacity:.92;mask-image:linear-gradient(to bottom,transparent 0%,#000 24%,#000 82%,transparent 100%)}.hero-foreground{bottom:calc(145px - 19vw)}.story:has(>.material-image){padding-top:70px}.hero-reveal .button{white-space:nowrap}
+@media(min-width:1000px){
+.hero-product-stage{left:43%;right:auto;width:min(53%,calc((100svh - 210px)*1.1396));top:46%;translate:0 -46%;transform-origin:50% 50%}.hero-copy{left:7%;top:26%;max-width:48%}.hero-copy h1{font-size:clamp(108px,10.8vw,174px)}
+.hero-scroll.scroll-enabled{height:260svh}.scroll-enabled .hero{position:sticky;top:0;min-height:560px;height:100svh}.scroll-enabled .hero-reveal{position:absolute;z-index:4;left:56%;top:29%;width:39%;padding:0;background:none;opacity:0;transform:translateX(55px)}.scroll-enabled .hero-reveal h2{font-size:clamp(54px,5.5vw,88px)}.scroll-enabled .hero-landscape{transform-origin:65% 55%}.scroll-enabled .hero-product-stage{will-change:transform}.scroll-enabled .hero-copy,.scroll-enabled .hero-reveal{will-change:transform,opacity}
+}
+@media(prefers-reduced-motion:reduce){.hero-scroll{height:auto!important}.hero{position:relative!important}.hero-reveal{opacity:1!important;transform:none!important}.hero-foreground{transform:none!important}}
