@@ -100,3 +100,17 @@ header:not(.scrolled){background:transparent;border-bottom-color:transparent}.he
  .hero-copy .button span{font-size:22px}
 }
 .product-name{font-size:16px;font-weight:600;margin:22px 0 0}.product-name+.product-description{margin-top:12px}
+/* An editorial styling moment, distinct from the product gallery below. */
+.worn-editorial{grid-template-columns:34% 66%;padding:30px 7% 120px;overflow:hidden;align-items:center}
+.worn-editorial .outlook-copy{grid-column:1;grid-row:1;padding:0 28px 0 0;align-self:center}
+.worn-editorial h2{font-size:clamp(56px,5.1vw,86px);line-height:.95}
+.worn-editorial .worn-lead{font-size:20px;margin-top:26px}
+.worn-editorial .worn-index{margin-top:65px;font-size:8px;letter-spacing:1.2px}
+.worn-composition{position:relative;grid-column:2;grid-row:1;padding-left:8%;padding-bottom:55px}
+.worn-composition .worn-photo{height:clamp(570px,48vw,780px);min-height:0;overflow:hidden}
+.worn-composition .worn-photo>img{height:100%;max-height:none;object-fit:contain}
+.worn-inset{position:absolute;left:-4%;bottom:0;width:31%;margin:0;padding:8px;background:var(--paper);box-shadow:0 8px 24px #17222a10}
+.worn-inset img{display:block;width:100%;aspect-ratio:1;object-fit:cover}
+.worn-inset figcaption{padding:12px 4px 5px;font-size:8px;font-weight:600;letter-spacing:1.3px}
+@media(max-width:900px){.worn-editorial{grid-template-columns:38% 62%;padding-left:5%;padding-right:5%}.worn-editorial h2{font-size:58px}.worn-editorial .worn-lead{font-size:17px}.worn-inset{width:37%}}
+@media(max-width:600px){.worn-editorial{grid-template-columns:1fr;gap:28px;padding:15px 5% 65px}.worn-editorial .outlook-copy{grid-column:1;grid-row:1;padding:0}.worn-editorial h2{font-size:64px}.worn-editorial .eyebrow{margin-bottom:20px}.worn-editorial .worn-lead{margin:20px 0 0}.worn-editorial .worn-index{display:none}.worn-composition{grid-column:1;grid-row:2;padding-left:8%;padding-bottom:30px}.worn-composition .worn-photo{height:480px}.worn-inset{left:0;width:34%}}
