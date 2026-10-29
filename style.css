@@ -14,7 +14,7 @@ header:not(.scrolled){background:transparent;border-bottom-color:transparent}.he
 
 /* Quiet alpine atmosphere keeps the garment in the foreground. */
 .hero-landscape{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0}
-.hero-mountains{position:absolute;width:110%;height:65%;left:-5%;bottom:1%;object-fit:cover;object-position:center top;opacity:.58;filter:none;mask-image:linear-gradient(to bottom,transparent 0%,#000 32%,#000 78%,transparent 100%),linear-gradient(to right,#0004 0%,#0006 40%,#000 65%);mask-composite:intersect;user-select:none}
+.hero-mountains{position:absolute;width:110%;height:65%;left:-5%;bottom:1%;object-fit:cover;object-position:center top;opacity:.7;filter:none;mask-image:linear-gradient(to bottom,transparent 0%,#000 32%,#000 78%,transparent 100%),linear-gradient(to right,#0004 0%,#0006 40%,#000 65%);mask-composite:intersect;user-select:none}
 .hero-mist{position:absolute;left:-8%;right:-8%;bottom:-2%;height:19%;background:radial-gradient(ellipse at 72% 65%,#dfe8ef66,transparent 65%),linear-gradient(0deg,#c1d0df99,transparent 80%);filter:blur(12px)}
 .hero-product-stage{inset:115px 2% 110px 42%;z-index:1}.hero-jacket{height:100%;object-position:center bottom}
 .hero-shadow{bottom:-12px;left:22%;width:56%;height:28px;opacity:.7;filter:blur(9px);background:radial-gradient(ellipse,#41577670,#52698525 45%,transparent 72%)}
@@ -33,3 +33,14 @@ header:not(.scrolled){background:transparent;border-bottom-color:transparent}.he
 .hero.motion-active .hero-clouds{will-change:transform}
 @media(max-width:600px){.hero-clouds{top:-3%;left:-10%;width:120%;right:auto;opacity:.5}}
 @media(prefers-reduced-motion:reduce){.hero-clouds{transform:none!important}}
+
+/* Foreground establishes a close plane beneath the floating product. */
+.hero-foreground{position:absolute;z-index:3;left:-5%;bottom:-7%;width:110%;height:27%;object-fit:cover;object-position:center bottom;pointer-events:none;user-select:none}
+.hero-copy{top:23%;max-width:62%;z-index:1}.hero-copy h1{font-size:clamp(108px,12.4vw,190px);line-height:.86;letter-spacing:-3px}.hero-copy .intro{margin:25px 0;font-size:19px}.hero-product-stage{z-index:2}.hero-bottom{z-index:4;bottom:23px;color:#17222a;text-shadow:0 1px 6px #fff}.hero.motion-active .hero-foreground{will-change:transform}
+@media(min-width:601px){.hero-product-stage{top:47%;width:min(60%,calc((100svh - 220px)*1.1396));max-height:calc(100svh - 220px)}}
+@media(max-width:900px){.hero-copy h1{font-size:clamp(85px,12vw,112px)}}
+@media(max-width:600px){.hero-copy{max-width:95%;top:24%}.hero-copy h1{font-size:88px}.hero-foreground{height:22%}.hero-copy .intro{font-size:16px}}
+@media(prefers-reduced-motion:reduce){.hero-foreground{transform:none!important}}
+
+.hero-foreground{height:auto;bottom:calc(85px - 19vw);object-fit:contain}.hero-bottom{background:#e8eff5d9;padding:10px 14px;bottom:12px;text-shadow:none;backdrop-filter:blur(6px)}
+@media(max-width:600px){.hero-foreground{width:160%;left:-30%;bottom:calc(75px - 28vw)}}
