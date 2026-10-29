@@ -29,7 +29,7 @@ header:not(.scrolled){background:transparent;border-bottom-color:transparent}.he
 @media(min-width:601px){.hero-product-stage{left:auto;right:1%;width:min(60%,calc((100svh - 180px)*1.1396));max-height:calc(100svh - 180px);top:50%;translate:0 -47%}}
 
 /* Thin upper-sky cloud bank sits behind the product. */
-.hero-clouds{position:absolute;top:7%;right:-8%;width:82%;height:auto;opacity:.47;filter:blur(2px);mix-blend-mode:screen;pointer-events:none;user-select:none;mask-image:linear-gradient(to right,transparent,#000 25%,#000 85%,transparent)}
+.hero-clouds{position:absolute;top:-3%;left:-3%;right:auto;width:106%;height:82%;object-fit:cover;object-position:center top;opacity:.78;filter:none;mix-blend-mode:normal;pointer-events:none;user-select:none;mask-image:linear-gradient(to bottom,#000 0%,#000 48%,transparent 100%),linear-gradient(to right,#0009 0%,#000b 40%,#000 70%);mask-composite:intersect}
 .hero.motion-active .hero-clouds{will-change:transform}
-@media(max-width:600px){.hero-clouds{top:12%;width:110%;right:-35%;opacity:.3}}
+@media(max-width:600px){.hero-clouds{top:-3%;left:-10%;width:120%;right:auto;opacity:.5}}
 @media(prefers-reduced-motion:reduce){.hero-clouds{transform:none!important}}
