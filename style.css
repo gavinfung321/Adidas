@@ -223,7 +223,7 @@ header:not(.scrolled){background:transparent;border-bottom-color:transparent}.he
 @media(prefers-reduced-motion:reduce){.bag-drawer[open]{animation:none}}
 
 /* Keep dialog close buttons above gallery photos, which sit in their own positioned layer. */
-.dialog-close{z-index:3;display:grid;place-items:center;width:44px;height:44px;padding:0}
+.dialog-close{z-index:3;display:grid;place-items:center;width:44px;height:44px;padding:0;font-size:16px}
 @media(max-width:600px){#purchase-dialog,#winter-dialog{padding-top:64px}}
 .winter-thumbnails{scrollbar-width:none}
 .winter-thumbnails::-webkit-scrollbar{display:none}
