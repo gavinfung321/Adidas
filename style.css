@@ -228,6 +228,12 @@ header:not(.scrolled){background:transparent;border-bottom-color:transparent}.he
 .winter-thumbnails{scrollbar-width:none}
 .winter-thumbnails::-webkit-scrollbar{display:none}
 
+/* Compact Winter Edit selector so Add to bag sits within the first screen. */
+#winter-dialog .winter-dialog-grid h2{font-size:44px;line-height:.95}
+#winter-dialog-description{margin:12px 0 0}
+@media(max-width:600px){#winter-dialog .winter-dialog-grid h2{font-size:34px}#winter-dialog{padding-top:56px}.winter-gallery>.gallery-stage>img{max-height:30vh}#winter-dialog-description{margin-top:8px;font-size:14px;line-height:1.5}#winter-dialog .purchase-price{margin-top:12px}#winter-dialog fieldset{margin:16px 0 14px}}
+@media(max-width:600px) and (max-height:720px){#purchase-dialog,#winter-dialog{padding-top:52px}.winter-gallery>.gallery-stage>img{max-height:20vh}.purchase-gallery>.gallery-stage>img{height:120px}#purchase-dialog .purchase-grid{gap:16px}#purchase-dialog .purchase-grid h2{font-size:38px}#purchase-dialog .eyebrow{display:none}#purchase-dialog fieldset{margin:14px 0 12px}#winter-dialog .winter-dialog-grid h2{font-size:30px}#winter-dialog-description{font-size:13px}}
+
 /* iOS Safari colours button text system-blue and rounds buttons by default. */
 button{color:inherit;-webkit-appearance:none;appearance:none;border-radius:0}
 .button{color:var(--ink)}

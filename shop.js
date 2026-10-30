@@ -246,8 +246,6 @@
     prepareSelector(winterForm, product);
     openModal(winterDialog, button);
   }));
-  $('.winter-return').addEventListener('click', () => winterDialog.close());
-
   // ---- Bag drawer ----
   function showView(view) {
     ui.itemsView.hidden = view !== 'items';
