@@ -222,6 +222,12 @@ header:not(.scrolled){background:transparent;border-bottom-color:transparent}.he
 }
 @media(prefers-reduced-motion:reduce){.bag-drawer[open]{animation:none}}
 
+/* Keep dialog close buttons above gallery photos, which sit in their own positioned layer. */
+.dialog-close{z-index:3;display:grid;place-items:center;width:44px;height:44px;padding:0}
+@media(max-width:600px){#purchase-dialog,#winter-dialog{padding-top:64px}}
+.winter-thumbnails{scrollbar-width:none}
+.winter-thumbnails::-webkit-scrollbar{display:none}
+
 /* iOS Safari colours button text system-blue and rounds buttons by default. */
 button{color:inherit;-webkit-appearance:none;appearance:none;border-radius:0}
 .button{color:var(--ink)}

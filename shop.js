@@ -213,7 +213,14 @@
     const thumbs = Array.from(gallery.querySelectorAll('.purchase-thumbnails [aria-pressed]'));
     if (thumbs.length < 2) return;
     const current = Math.max(0, thumbs.findIndex(button => button.getAttribute('aria-pressed') === 'true'));
-    thumbs[(current + step + thumbs.length) % thumbs.length].click();
+    const next = thumbs[(current + step + thumbs.length) % thumbs.length];
+    next.click();
+    const strip = next.parentElement;
+    const offset = next.getBoundingClientRect().left - strip.getBoundingClientRect().left;
+    strip.scrollTo({
+      left: strip.scrollLeft + offset - (strip.clientWidth - next.offsetWidth) / 2,
+      behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+    });
   }
 
   $$('.gallery-stage').forEach(stage => {
