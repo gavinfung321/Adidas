@@ -109,15 +109,15 @@ main:has(#co-done:not([hidden])){display:flex;align-items:center;padding-top:24p
 .co-done{width:100%;max-width:940px;margin:0 auto;text-align:center}
 .co-done h1{margin:10px 0 12px;font-size:clamp(44px,4.6vw,64px);line-height:.92;letter-spacing:-1.5px}
 .co-done .co-lead{max-width:none;margin:0 auto 24px;font-size:16px}
-.co-done-body{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:28px;align-items:start;text-align:left}
-.co-done-card{padding:2px 22px 12px}
+.co-done-body{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:28px;align-items:stretch;text-align:left}
+.co-done-card{display:flex;flex-direction:column;padding:2px 22px 12px}
 .co-done-card .co-line{grid-template-columns:52px minmax(0,1fr) auto;gap:14px;padding:10px 0}
 .co-done-card .co-line-photo{width:52px;height:62px}
 .co-done-card .co-line:last-child{border-bottom-color:transparent}
-.co-done-card .co-totals{margin-top:0}
+.co-done-card .co-totals{margin-top:auto}
 .co-done-card .co-totals>div{padding:4px 0;font-size:13px}
 .co-done-card .co-totals .co-grand{margin:4px 0 4px;padding-top:12px;font-size:18px}
-.co-next{padding:20px 22px;background:#f5f4efa6;border:1px solid #ffffffa6;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.co-next{padding:20px 22px}
 .co-next-title{margin:0 0 14px;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase}
 .co-next-steps{margin:0;padding:0;list-style:none;counter-reset:next}
 .co-next-steps li{position:relative;display:grid;gap:2px;padding:0 0 16px 44px;counter-increment:next;font-size:14px;line-height:1.5}
