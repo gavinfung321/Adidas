@@ -53,11 +53,15 @@ h1{margin:12px 0 32px;font-family:'Barlow Condensed','Arial Narrow',Impact,sans-
 /* Frosted panels over the sky */
 .co-card{background:#f5f4efd9;border:1px solid #ffffffa6;box-shadow:0 30px 60px -36px #2b3f5573;-webkit-backdrop-filter:blur(18px) saturate(1.1);backdrop-filter:blur(18px) saturate(1.1)}
 
-.co-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:64px;align-items:start}
-.co-pay{margin-top:28px;padding:36px 36px 28px}
+.co-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:64px;align-items:stretch}
+.co-intro{display:flex;flex-direction:column}
+.co-pay{display:flex;flex-direction:column;padding:36px 36px 28px}
+.co-pay form{display:flex;flex:1;flex-direction:column}
+.co-pay .co-fineprint{margin-top:auto;padding-top:14px}
 
 /* Order summary */
-.co-summary{padding:22px 28px 24px}
+.co-summary{display:flex;flex:1;flex-direction:column;padding:22px 28px 24px}
+.co-summary-body{display:flex;flex:1;flex-direction:column}
 .co-summary-toggle{display:none}
 .co-summary-head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:4px}
 .co-edit{font-size:13px;font-weight:600;text-decoration:none;border-bottom:1px solid currentColor}
@@ -75,7 +79,7 @@ h1{margin:12px 0 32px;font-family:'Barlow Condensed','Arial Narrow',Impact,sans-
 .co-totals dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
 .co-totals .co-grand{margin-top:10px;padding-top:14px;border-top:1px solid var(--ink);font-size:20px;font-weight:700}
 .co-totals .co-grand dt{color:var(--ink)}
-.co-summary-note{margin:14px 0 0;font-size:12px;line-height:1.5;color:var(--muted)}
+.co-summary-note{margin:auto 0 0;padding-top:14px;font-size:12px;line-height:1.5;color:var(--muted)}
 
 /* Payment form */
 .co-field{margin-bottom:22px}
