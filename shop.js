@@ -21,9 +21,6 @@
     summary: $('#bag-summary'),
     subtotal: $('#bag-subtotal'),
     headCount: $('#bag-head-count'),
-    itemsView: $('#bag-items-view'),
-    checkoutView: $('#bag-checkout-view'),
-    checkoutNotice: $('#bag-checkout-notice'),
     checkoutButton: $('#bag-checkout'),
     storageNotice: $('#bag-storage-notice'),
     live: $('#bag-live')
@@ -157,7 +154,7 @@
       return;
     }
     commit(result.lines);
-    openBag();
+    openModal(bagDialog);
     announce(result.quantity > 1
       ? `Added another ${product.name}, size ${variant.size}. Quantity is now ${result.quantity}. Bag has ${units(cart.totalUnits(lines))}.`
       : `Added ${product.name}, size ${variant.size}, to your bag. Bag has ${units(cart.totalUnits(lines))}.`);
@@ -247,27 +244,23 @@
     openModal(winterDialog, button);
   }));
   // ---- Bag drawer ----
-  function showView(view) {
-    ui.itemsView.hidden = view !== 'items';
-    ui.checkoutView.hidden = view !== 'checkout';
-  }
-
-  function openBag(trigger) {
-    showView('items');
-    openModal(bagDialog, trigger);
-  }
-
-  $$('[data-bag-open]').forEach(button => button.addEventListener('click', () => openBag(button)));
+  $$('[data-bag-open]').forEach(button => button.addEventListener('click', () => openModal(bagDialog, button)));
   $$('[data-bag-continue]').forEach(button => button.addEventListener('click', () => bagDialog.close()));
+
+  // Payment happens on the checkout page (Stripe test mode).
   ui.checkoutButton.addEventListener('click', () => {
-    if (!lines.length) return;
-    showView('checkout');
-    ui.checkoutNotice.focus();
+    if (lines.length) location.assign('checkout.html');
   });
-  $('#bag-back').addEventListener('click', () => {
-    showView('items');
-    ui.checkoutButton.focus();
-  });
+
+  // "Back to bag" on the checkout page links to ?bag=open.
+  function openBagFromLink() {
+    const params = new URLSearchParams(location.search);
+    if (params.get('bag') !== 'open') return;
+    params.delete('bag');
+    const query = params.toString();
+    history.replaceState(history.state, '', location.pathname + (query ? `?${query}` : '') + location.hash);
+    openModal(bagDialog);
+  }
 
   function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -344,7 +337,6 @@
     ui.checkoutButton.disabled = !described.length;
     ui.subtotal.textContent = described.length ? money(cart.subtotalMinor(lines)) : '';
     ui.storageNotice.hidden = persistent;
-    if (!described.length && !ui.checkoutView.hidden) showView('items');
   }
 
   function restoreFocus(variantId, action) {
@@ -386,4 +378,5 @@
   });
 
   render();
+  openBagFromLink();
 })();
