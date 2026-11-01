@@ -31,9 +31,13 @@
       return lines.find(line => line.variantId === variantId) || null;
     }
 
+    // Products switched off in the database stay resolvable but can't be bought.
+    const isAvailable = entry => entry.variant.available !== false;
+
     function add(lines, productId, variantId) {
       const entry = resolve(productId, variantId);
       if (!entry) return { status: 'invalid', lines };
+      if (!isAvailable(entry)) return { status: 'unavailable', lines };
       const existing = findLine(lines, variantId);
       if (!existing) {
         return { status: 'added', quantity: 1, lines: [...lines, { productId, variantId, quantity: 1 }] };
@@ -77,14 +81,20 @@
           image: product.image,
           imageAlt: product.imageAlt,
           quantity: line.quantity,
+          available: isAvailable({ product, variant }),
           unitPriceMinor: product.unitPriceMinor,
           lineTotalMinor: product.unitPriceMinor * line.quantity
         };
       });
     }
 
+    // Lines that can go to checkout.
+    function purchasable(lines) {
+      return lines.filter(line => isAvailable(resolve(line.productId, line.variantId)));
+    }
+
     function subtotalMinor(lines) {
-      return describe(lines).reduce((sum, line) => sum + line.lineTotalMinor, 0);
+      return describe(purchasable(lines)).reduce((sum, line) => sum + line.lineTotalMinor, 0);
     }
 
     // Returns only valid rows; duplicates merge and are capped at the limit.
@@ -148,7 +158,7 @@
       }
     }
 
-    return { resolve, add, setQuantity, remove, totalUnits, subtotalMinor, describe, validate, parse, serialize, load, save };
+    return { resolve, add, setQuantity, remove, totalUnits, subtotalMinor, describe, purchasable, validate, parse, serialize, load, save };
   }
 
   return { STORAGE_KEY, SCHEMA_VERSION, MIN_QUANTITY, MAX_QUANTITY, isValidQuantity, createCartModel };

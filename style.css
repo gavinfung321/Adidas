@@ -249,3 +249,11 @@ button{color:inherit;-webkit-appearance:none;appearance:none;border-radius:0}
 .winter-caption .winter-link{margin-top:auto}
 .detail-grid article{display:grid;grid-row:span 3;grid-template-rows:subgrid;row-gap:0}
 .detail-label{align-self:start;align-items:baseline}
+/* Products switched off in the database (Episode 4) */
+.winter-card[hidden],.winter-edit[hidden]{display:none}
+@media (min-width:861px){.winter-grid:has(>.winter-card[hidden]){grid-template-columns:repeat(auto-fit,calc((100% - 50px)/3));justify-content:center}}
+.size-options input:disabled+span{cursor:not-allowed;color:#8f9aa1;border-color:#c6cdcf;text-decoration:line-through}
+.size-options label:has(input:disabled){cursor:not-allowed}
+.bag-form button[type=submit]:disabled{cursor:not-allowed;opacity:.5;box-shadow:none;transform:none}
+.bag-line.is-unavailable .bag-line-photo{opacity:.45}
+.bag-unavailable{margin:8px 0 0;font-size:12px;line-height:1.5;color:#a3261b}

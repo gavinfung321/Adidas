@@ -1,5 +1,7 @@
 // Shared demo catalogue. Prices are sample HKD values for this concept, not adidas retail prices,
 // and sizes are demo options rather than verified availability.
+// Since Episode 4 the live catalogue comes from Supabase (catalogue-remote.js); this copy seeded the
+// database and is the fallback when it cannot be reached. Checkout always charges database prices.
 (function (root, factory) {
   const catalogue = factory();
   if (typeof module === 'object' && module.exports) module.exports = catalogue;
@@ -10,13 +12,16 @@
   const CURRENCY = 'HKD';
   const SIZES = ['S', 'M', 'L', 'XL'];
 
-  function product(id, fields) {
+  // `available: false` keeps a product resolvable (so a bag can name it) but not purchasable.
+  function product(id, { variants, available = true, ...fields }) {
+    const sizes = variants || SIZES.map(size => ({ id: `${id}-${size.toLowerCase()}`, size }));
     return Object.freeze({
       id,
       ...fields,
+      available,
       currency: CURRENCY,
       demoPricing: true,
-      variants: Object.freeze(SIZES.map(size => Object.freeze({ id: `${id}-${size.toLowerCase()}`, size })))
+      variants: Object.freeze(sizes.map(v => Object.freeze({ id: v.id, size: v.size, available: available && v.available !== false })))
     });
   }
 
@@ -79,13 +84,21 @@
     })
   ]);
 
-  const byId = new Map(products.map(p => [p.id, p]));
   const formatter = new Intl.NumberFormat('en-HK', { style: 'currency', currency: CURRENCY });
 
-  return Object.freeze({
-    currency: CURRENCY,
-    products,
-    getProduct: id => byId.get(id) || null,
-    formatMoney: minor => formatter.format(minor / 100)
-  });
+  function createCatalogue(list, source) {
+    const frozen = Object.freeze(list.slice());
+    const byId = new Map(frozen.map(p => [p.id, p]));
+    return Object.freeze({
+      currency: CURRENCY,
+      source,
+      products: frozen,
+      getProduct: id => byId.get(id) || null,
+      formatMoney: minor => formatter.format(minor / 100),
+      product,
+      createCatalogue
+    });
+  }
+
+  return createCatalogue(products, 'fallback');
 });

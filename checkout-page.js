@@ -1,8 +1,8 @@
-// On-brand checkout page. Requires products.js, cart.js, checkout.js and Stripe.js (js.stripe.com).
-// Stripe's Payment Element collects the card in its own iframe; this page never sees card details.
-(() => {
+// On-brand checkout page. Requires products.js, catalogue-remote.js, cart.js, checkout.js and
+// Stripe.js (js.stripe.com). Stripe's Payment Element collects the card in its own iframe; this page
+// never sees card details.
+window.IntoTheBlueCatalogueReady.then(catalogue => {
   'use strict';
-  const catalogue = window.IntoTheBlueCatalogue;
   const Cart = window.IntoTheBlueCart;
   const Checkout = window.IntoTheBlueCheckout;
   const cart = Cart.createCartModel(catalogue);
@@ -88,14 +88,17 @@
     return item;
   }
 
+  // Lines carry the server's unitPriceMinor once checkout has started; before that, the catalogue's.
+  const unitPrice = line => (Number.isInteger(line.unitPriceMinor) ? line.unitPriceMinor : line.product.unitPriceMinor);
+
   function renderSummary(lines) {
     ui.lines.replaceChildren(...lines.map(line => lineItem({
       image: line.product.image,
       name: line.product.name,
       meta: `Size ${line.variant.size} · Qty ${line.quantity}`,
-      total: money(line.product.unitPriceMinor * line.quantity)
+      total: money(unitPrice(line) * line.quantity)
     })));
-    const subtotal = money(lines.reduce((sum, line) => sum + line.product.unitPriceMinor * line.quantity, 0));
+    const subtotal = money(lines.reduce((sum, line) => sum + unitPrice(line) * line.quantity, 0));
     ui.subtotal.textContent = subtotal;
     ui.totals.forEach(node => { node.textContent = subtotal; });
   }
@@ -141,12 +144,16 @@
   let busy = false;
   let actions = null;
 
-  function setError(message, retry) {
+  function setError(message, retry, backToBag) {
     ui.error.replaceChildren();
     ui.error.hidden = !message;
     if (!message) return;
     ui.error.append(el('p', '', message));
-    if (retry) {
+    if (backToBag) {
+      const link = el('a', 'co-retry', 'Back to bag');
+      link.href = './?bag=open';
+      ui.error.append(link);
+    } else if (retry) {
       const button = el('button', 'co-retry', 'Try again');
       button.type = 'button';
       button.addEventListener('click', () => location.reload());
@@ -169,11 +176,15 @@
     else if (actions) applySession(actions.getSession());
   }
 
-  function unavailable() {
+  function unavailable(error) {
     ui.loading.hidden = true;
     ui.submit.disabled = true;
     ui.submitText.textContent = 'Pay';
-    setError('Checkout is unavailable right now. Your bag is saved — please try again shortly.', true);
+    if (error && error.code === 'unavailable') {
+      setError('Something in your bag is no longer available. Your bag is saved — go back to update it.', false, true);
+    } else {
+      setError('Checkout is unavailable right now. Your bag is saved — please try again shortly.', true);
+    }
   }
 
   ui.email.addEventListener('input', () => setEmailError(''));
@@ -212,11 +223,11 @@
       await domReady;
       if (typeof window.Stripe !== 'function') throw new Error('Stripe.js did not load.');
     } catch (error) {
-      unavailable();
+      unavailable(error);
       return;
     }
 
-    const charged = started.lines.map(line => ({ ...variantIndex.get(line.variantId), quantity: line.quantity }));
+    const charged = started.lines.map(line => ({ ...variantIndex.get(line.variantId), quantity: line.quantity, unitPriceMinor: line.unitPriceMinor }));
     if (charged.some(line => !line.product)) { unavailable(); return; }
     renderSummary(charged);
 
@@ -364,7 +375,8 @@
     return;
   }
 
-  const bag = cart.load(storage).lines;
+  // Products switched off since they were added stay in the bag but are not sent to checkout.
+  const bag = cart.purchasable(cart.load(storage).lines);
   if (!bag.length) {
     showState('co-empty');
     return;
@@ -372,4 +384,4 @@
   showState('co-checkout');
   renderSummary(bag.map(line => ({ ...variantIndex.get(line.variantId), quantity: line.quantity })));
   begin(bag);
-})();
+});

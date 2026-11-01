@@ -23,14 +23,20 @@
     try {
       const response = await fetch(`${base}/${path}`, { ...init, signal: controller.signal });
       const data = await response.json().catch(() => null);
-      if (!response.ok || !data) throw new Error(`Checkout request failed (${response.status}).`);
+      if (!response.ok || !data) {
+        const error = new Error(`Checkout request failed (${response.status}).`);
+        error.code = data && typeof data.error === 'string' ? data.error : 'request_failed';
+        throw error;
+      }
       return data;
     } finally {
       clearTimeout(timer);
     }
   }
 
-  // Resolves to { clientSecret, lines: [{ variantId, quantity }] } in the order Stripe will charge them.
+  // Resolves to { clientSecret, lines: [{ variantId, quantity, unitPriceMinor }] } in the order Stripe
+  // will charge them, with the database prices. Rejects with error.code 'unavailable' if a product
+  // in the bag has been switched off.
   async function start(lines) {
     const data = await request('create-checkout-session', {
       method: 'POST',

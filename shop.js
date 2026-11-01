@@ -1,7 +1,6 @@
-// Product selectors and the demo bag drawer. Requires products.js and cart.js.
-(() => {
+// Product selectors and the demo bag drawer. Requires products.js, catalogue-remote.js and cart.js.
+window.IntoTheBlueCatalogueReady.then(catalogue => {
   'use strict';
-  const catalogue = window.IntoTheBlueCatalogue;
   const Cart = window.IntoTheBlueCart;
   const cart = Cart.createCartModel(catalogue);
   const money = catalogue.formatMoney;
@@ -113,6 +112,7 @@
       input.type = 'radio';
       input.name = 'variant';
       input.value = variant.id;
+      input.disabled = variant.available === false;
       const text = document.createElement('span');
       text.textContent = variant.size;
       label.append(input, text);
@@ -133,6 +133,8 @@
     form.querySelector('[data-product-price]').textContent = money(product.unitPriceMinor);
     renderSizeOptions(form, product);
     setSizeError(form, '');
+    form.querySelector('button[type="submit"]').disabled = !product.available;
+    if (!product.available) form.querySelector('.size-error').textContent = 'No longer available in this demo.';
   }
 
   function handleAdd(form) {
@@ -145,7 +147,7 @@
     }
     const result = cart.add(lines, product.id, variantId);
     const { variant } = cart.resolve(product.id, variantId) || {};
-    if (result.status === 'invalid') {
+    if (result.status === 'invalid' || result.status === 'unavailable') {
       setSizeError(form, 'That size isn’t available in this demo. Please choose another.');
       return;
     }
@@ -170,7 +172,8 @@
 
   const purchaseForm = $('#purchase-form');
   const featured = catalogue.getProduct(purchaseForm.dataset.productId);
-  prepareSelector(purchaseForm, featured);
+  if (featured) prepareSelector(purchaseForm, featured);
+  else purchaseForm.querySelector('button[type="submit"]').disabled = true;
 
   $$('[data-buy]').forEach(button => button.addEventListener('click', () => {
     purchaseForm.reset();
@@ -234,7 +237,19 @@
       if (Math.abs(dx) > 40) stepGallery(gallery, dx < 0 ? 1 : -1);
     }, { passive: true });
   });
-  $$('[data-winter]').forEach(button => button.addEventListener('click', () => {
+  // Products switched off in the database leave the Winter Edit; the count in the header follows.
+  const COUNT_WORDS = ['', 'ONE MORE PERSPECTIVE.', 'TWO MORE PERSPECTIVES.', 'THREE MORE PERSPECTIVES.'];
+  const winterButtons = $$('[data-winter]');
+  winterButtons.forEach(button => {
+    const product = catalogue.getProduct(button.dataset.winter);
+    button.closest('.winter-card').hidden = !(product && product.available);
+  });
+  const shownWinter = $$('.winter-card').filter(card => !card.hidden).length;
+  $('#winter-edit').hidden = shownWinter === 0;
+  const countLabel = $('#winter-edit .section-top span:last-child');
+  if (countLabel && COUNT_WORDS[shownWinter]) countLabel.textContent = COUNT_WORDS[shownWinter];
+
+  winterButtons.forEach(button => button.addEventListener('click', () => {
     const product = catalogue.getProduct(button.dataset.winter);
     if (!product) return;
     $('#winter-dialog-title').textContent = product.name;
@@ -249,7 +264,7 @@
 
   // Payment happens on the checkout page (Stripe test mode).
   ui.checkoutButton.addEventListener('click', () => {
-    if (lines.length) location.assign('checkout.html');
+    if (cart.purchasable(lines).length) location.assign('checkout.html');
   });
 
   // "Back to bag" on the checkout page links to ?bag=open.
@@ -285,6 +300,19 @@
     const info = el('div', 'bag-line-info');
     const name = el('h3', 'bag-line-name', line.name);
     const size = el('p', 'bag-line-meta', `Size ${line.size}`);
+
+    const remove = el('button', 'bag-remove', 'Remove');
+    remove.type = 'button';
+    remove.dataset.action = 'remove';
+    remove.setAttribute('aria-label', `Remove ${label} from bag`);
+
+    if (!line.available) {
+      item.classList.add('is-unavailable');
+      info.append(name, size, el('p', 'bag-unavailable', 'No longer available. It won’t be included at checkout.'), remove);
+      item.append(image, info, el('p', 'bag-line-total'));
+      return item;
+    }
+
     const unit = el('p', 'bag-line-meta', `${money(line.unitPriceMinor)} each`);
 
     const qty = el('div', 'bag-qty');
@@ -303,11 +331,6 @@
     plus.setAttribute('aria-label', `Increase quantity of ${label}`);
     plus.disabled = line.quantity >= Cart.MAX_QUANTITY;
     qty.append(minus, value, plus);
-
-    const remove = el('button', 'bag-remove', 'Remove');
-    remove.type = 'button';
-    remove.dataset.action = 'remove';
-    remove.setAttribute('aria-label', `Remove ${label} from bag`);
 
     info.append(name, size, unit, qty);
     if (line.quantity >= Cart.MAX_QUANTITY) {
@@ -334,7 +357,7 @@
     ui.lines.hidden = !described.length;
     ui.empty.hidden = described.length > 0;
     ui.summary.hidden = !described.length;
-    ui.checkoutButton.disabled = !described.length;
+    ui.checkoutButton.disabled = !cart.purchasable(lines).length;
     ui.subtotal.textContent = described.length ? money(cart.subtotalMinor(lines)) : '';
     ui.storageNotice.hidden = persistent;
   }
@@ -379,4 +402,4 @@
 
   render();
   openBagFromLink();
-})();
+});
