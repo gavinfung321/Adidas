@@ -37,10 +37,12 @@
   // Resolves to { clientSecret, lines: [{ variantId, quantity, unitPriceMinor }] } in the order Stripe
   // will charge them, with the database prices. Rejects with error.code 'unavailable' if a product
   // in the bag has been switched off.
-  async function start(lines) {
+  async function start(lines, accessToken) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
     const data = await request('create-checkout-session', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ lines: lines.map(({ variantId, quantity }) => ({ variantId, quantity })) })
     });
     const valid = typeof data.clientSecret === 'string'

@@ -182,3 +182,6 @@ main:has(#co-done:not([hidden])){display:flex;align-items:center;padding-top:24p
   .co-next{order:3;padding:16px}
   .co-footer{flex-direction:column;gap:6px}
 }
+
+.co-button-secondary{margin-bottom:10px;background:transparent;border:1px solid #17222a;color:var(--ink,#17222a)}
+.co-button-secondary:hover{background:#17222a0d}

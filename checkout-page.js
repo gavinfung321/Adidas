@@ -5,6 +5,7 @@ window.IntoTheBlueCatalogueReady.then(catalogue => {
   'use strict';
   const Cart = window.IntoTheBlueCart;
   const Checkout = window.IntoTheBlueCheckout;
+  const Account = window.IntoTheBlueAccount;
   const cart = Cart.createCartModel(catalogue);
   const money = catalogue.formatMoney;
   const $ = selector => document.querySelector(selector);
@@ -144,12 +145,16 @@ window.IntoTheBlueCatalogueReady.then(catalogue => {
   let busy = false;
   let actions = null;
 
-  function setError(message, retry, backToBag) {
+  function setError(message, retry, backToBag, signInAgain) {
     ui.error.replaceChildren();
     ui.error.hidden = !message;
     if (!message) return;
     ui.error.append(el('p', '', message));
-    if (backToBag) {
+    if (signInAgain) {
+      const link = el('a', 'co-retry', 'Sign in again');
+      link.href = './?account=signin';
+      ui.error.append(link);
+    } else if (backToBag) {
       const link = el('a', 'co-retry', 'Back to bag');
       link.href = './?bag=open';
       ui.error.append(link);
@@ -180,7 +185,9 @@ window.IntoTheBlueCatalogueReady.then(catalogue => {
     ui.loading.hidden = true;
     ui.submit.disabled = true;
     ui.submitText.textContent = 'Pay';
-    if (error && error.code === 'unavailable') {
+    if (error && error.code === 'session_invalid') {
+      setError('Your sign-in has expired. Please sign in again.', false, false, true);
+    } else if (error && error.code === 'unavailable') {
       setError('Something in your bag is no longer available. Your bag is saved — go back to update it.', false, true);
     } else {
       setError('Checkout is unavailable right now. Your bag is saved — please try again shortly.', true);
@@ -219,7 +226,8 @@ window.IntoTheBlueCatalogueReady.then(catalogue => {
     let started;
     try {
       if (!Checkout.publishableKey()) throw new Error('Checkout is not configured.');
-      started = await Checkout.start(bag);
+      const token = Account && Account.user() ? await Account.accessToken() : null;
+      started = await Checkout.start(bag, token);
       await domReady;
       if (typeof window.Stripe !== 'function') throw new Error('Stripe.js did not load.');
     } catch (error) {
@@ -341,6 +349,9 @@ window.IntoTheBlueCatalogueReady.then(catalogue => {
       return;
     }
     cart.save(storage, []);
+    if (Account && Account.user()) {
+      try { await Account.saveCart([]); } catch (error) { /* device bag is already empty */ }
+    }
     const format = minor => (String(summary.currency).toLowerCase() === 'hkd'
       ? money(minor)
       : `${(minor / 100).toFixed(2)} ${String(summary.currency).toUpperCase()}`);
@@ -360,6 +371,13 @@ window.IntoTheBlueCatalogueReady.then(catalogue => {
     renderPaymentDetails(summary);
     ui.back.textContent = '← Back to shop';
     ui.back.href = './';
+    const actions = document.querySelector('.co-actions');
+    if (actions && Account && Account.user() && !actions.querySelector('[data-my-orders]')) {
+      const orders = el('a', 'co-button co-button-secondary', 'View in My orders');
+      orders.href = './?account=orders';
+      orders.setAttribute('data-my-orders', '');
+      actions.prepend(orders);
+    }
     showState('co-done', '#co-done-title');
     announce(`Test payment complete: ${total}. Your bag is now empty.`);
   }
@@ -376,12 +394,15 @@ window.IntoTheBlueCatalogueReady.then(catalogue => {
   }
 
   // Products switched off since they were added stay in the bag but are not sent to checkout.
-  const bag = cart.purchasable(cart.load(storage).lines);
-  if (!bag.length) {
-    showState('co-empty');
-    return;
-  }
-  showState('co-checkout');
-  renderSummary(bag.map(line => ({ ...variantIndex.get(line.variantId), quantity: line.quantity })));
-  begin(bag);
+  Promise.resolve(Account && Account.ready).then(user => {
+    if (user && user.email && !ui.email.value) ui.email.value = user.email;
+    const bag = cart.purchasable(cart.load(storage).lines);
+    if (!bag.length) {
+      showState('co-empty');
+      return;
+    }
+    showState('co-checkout');
+    renderSummary(bag.map(line => ({ ...variantIndex.get(line.variantId), quantity: line.quantity })));
+    begin(bag);
+  });
 });

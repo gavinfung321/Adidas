@@ -194,6 +194,8 @@ header:not(.scrolled){background:transparent;border-bottom-color:transparent}.he
 .bag-remove:hover,.bag-continue:hover{color:#486f8c}
 .bag-empty{padding:36px 0}
 .bag-empty p{margin:0 0 22px;font-size:20px;font-weight:600}
+.bag-empty .button{width:100%;justify-content:center;gap:14px;font-size:15px;padding:16px 20px}
+.bag-empty .button span{font-size:18px}
 .bag-summary{flex:none;padding:16px 24px calc(18px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--paper)}
 .bag-subtotal{display:flex;justify-content:space-between;align-items:baseline;gap:16px;font-size:15px;font-weight:600}
 .bag-subtotal small{display:block;font-size:11px;font-weight:500;color:#5d6971}
@@ -257,3 +259,43 @@ button{color:inherit;-webkit-appearance:none;appearance:none;border-radius:0}
 .bag-form button[type=submit]:disabled{cursor:not-allowed;opacity:.5;box-shadow:none;transform:none}
 .bag-line.is-unavailable .bag-line-photo{opacity:.45}
 .bag-unavailable{margin:8px 0 0;font-size:12px;line-height:1.5;color:#a3261b}
+
+.nav-account:hover .bag-icon{opacity:.6}
+nav .nav-account{margin-right:-22px}
+@media(max-width:900px){nav .nav-account{margin-right:-8px}}
+.mobile-account{display:none}
+.account-dot{position:absolute;top:6px;right:2px;width:8px;height:8px;border-radius:50%;background:#3a6c9e}
+@media(max-width:600px){nav .nav-account{display:none}.mobile-account{display:inline-grid;margin-left:auto;margin-right:6px}.mobile-bag{margin-left:0}}
+.account-drawer .account-body{padding-top:8px}
+.account-status:empty,.account-error:empty{display:none}
+.account-status{margin:0 0 14px;padding:10px 12px;background:#e9eef0;font-size:13px;line-height:1.5}
+.account-status.is-success{display:flex;align-items:center;gap:12px;margin:0 0 22px;padding:16px 18px;background:#e5f6ea;color:#146c36;font-size:18px;font-weight:700;line-height:1.35}
+.account-status.is-success::before{content:'✓';flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#1f8a45;color:#fff;font-size:16px;line-height:1}
+.account-view h3:focus{outline:none}
+.account-orders-title,.account-view[data-account-view="account"] h3{margin:8px 0 12px;font-size:22px}
+.account-error{margin:0 0 14px;color:#a3261b;font-size:13px;line-height:1.5}
+.account-view h3{margin:0 0 10px;font-size:28px;letter-spacing:-.5px}
+.account-lead,.account-note,.account-switch,.account-signed-in{margin:0 0 18px;font-size:14px;line-height:1.55;color:#5d6971}
+.account-signed-in{color:var(--ink)}
+.account-signed-in strong,.account-lead strong{font-weight:700;color:var(--ink)}
+.account-form{display:grid;gap:14px;margin:0 0 16px}
+.account-field{display:grid;gap:6px;margin:0;font-size:13px;font-weight:600}
+.account-field small{font-weight:500;color:#5d6971}
+.account-field input{width:100%;min-height:48px;padding:12px 14px;border:1px solid #c6cdcf;background:#fff;color:var(--ink);font:inherit;font-weight:400}
+.account-field input:focus{outline:2px solid #2365c9;outline-offset:1px;border-color:#17222a}
+.account-link{display:inline;margin:0;padding:0;border:0;background:none;color:var(--ink);font:inherit;font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.account-link:hover{color:#486f8c}
+.account-signout{display:block;margin-top:28px}
+.account-orders{list-style:none;margin:0;padding:0}
+.account-orders-state{margin:0 0 12px;font-size:14px;color:#5d6971}
+.account-order{padding:16px 0;border-bottom:1px solid var(--line)}
+.account-order-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline;margin-bottom:8px;font-size:14px}
+.account-order-head span{color:#5d6971;font-size:12px}
+.account-order-lines{list-style:none;margin:0;padding:0}
+.account-order-line{display:flex;align-items:center;gap:12px;margin-top:10px;font-size:14px;line-height:1.4;color:var(--ink)}
+.account-order-line img{width:56px;height:68px;object-fit:contain;background:#e9edef;flex:none}
+.account-order-foot{margin:10px 0 0;font-size:14px;font-weight:700}
+.account-drawer .button.dark{width:100%;justify-content:center;gap:14px;font-size:15px;padding:16px 20px}
+.account-drawer .button.dark span{font-size:18px}
+.account-view>.button.dark{margin-bottom:22px}
+.account-view>.account-switch{margin-top:6px}

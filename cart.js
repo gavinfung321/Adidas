@@ -118,6 +118,11 @@
       return { lines: result, repaired };
     }
 
+    // Combines two bags (device and account): same items add up, capped at the limit.
+    function merge(first, second) {
+      return validate([...(Array.isArray(first) ? first : []), ...(Array.isArray(second) ? second : [])]).lines;
+    }
+
     function parse(json) {
       if (json === null || json === undefined || json === '') return { lines: [], repaired: false };
       let data;
@@ -158,7 +163,7 @@
       }
     }
 
-    return { resolve, add, setQuantity, remove, totalUnits, subtotalMinor, describe, purchasable, validate, parse, serialize, load, save };
+    return { resolve, add, setQuantity, remove, totalUnits, subtotalMinor, describe, purchasable, validate, merge, parse, serialize, load, save };
   }
 
   return { STORAGE_KEY, SCHEMA_VERSION, MIN_QUANTITY, MAX_QUANTITY, isValidQuantity, createCartModel };

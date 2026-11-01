@@ -2,6 +2,8 @@
 window.IntoTheBlueCatalogueReady.then(catalogue => {
   'use strict';
   const Cart = window.IntoTheBlueCart;
+  const Account = window.IntoTheBlueAccount;
+  const AccountPanel = window.IntoTheBlueAccountPanel;
   const cart = Cart.createCartModel(catalogue);
   const money = catalogue.formatMoney;
   const $ = selector => document.querySelector(selector);
@@ -10,7 +12,8 @@ window.IntoTheBlueCatalogueReady.then(catalogue => {
   const purchaseDialog = $('#purchase-dialog');
   const winterDialog = $('#winter-dialog');
   const bagDialog = $('#bag-dialog');
-  const managedDialogs = [purchaseDialog, winterDialog, bagDialog];
+  const accountDialog = $('#account-dialog');
+  const managedDialogs = [purchaseDialog, winterDialog, bagDialog, accountDialog].filter(Boolean);
   const menuToggle = $('.mobile-menu-toggle');
   const mobileMenu = $('#mobile-menu');
 
@@ -22,6 +25,7 @@ window.IntoTheBlueCatalogueReady.then(catalogue => {
     headCount: $('#bag-head-count'),
     checkoutButton: $('#bag-checkout'),
     storageNotice: $('#bag-storage-notice'),
+    syncNotice: $('#bag-sync-notice'),
     live: $('#bag-live')
   };
 
@@ -32,10 +36,45 @@ window.IntoTheBlueCatalogueReady.then(catalogue => {
   let lines = loaded.lines;
   let persistent = loaded.persistent;
   if (loaded.repaired) persistent = cart.save(storage, lines);
+  let syncOk = true;
+  let syncTimer = 0;
+  let syncPending = false;
 
-  function commit(nextLines) {
+  function queueAccountSave(nextLines) {
+    if (!Account || !Account.user()) return;
+    syncPending = true;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(async () => {
+      try {
+        await Account.saveCart(nextLines);
+        syncOk = true;
+      } catch (error) {
+        syncOk = false;
+      }
+      syncPending = false;
+      if (ui.syncNotice) ui.syncNotice.hidden = syncOk;
+    }, 500);
+  }
+
+  function commit(nextLines, { sync = true } = {}) {
     lines = nextLines;
     persistent = cart.save(storage, lines);
+    if (sync) queueAccountSave(lines);
+    render();
+  }
+
+  async function pullAccountBag(mode) {
+    if (!Account || !Account.user()) return;
+    try {
+      const remote = await Account.loadCart();
+      const next = mode === 'merge' ? cart.merge(lines, remote) : cart.validate(remote).lines;
+      lines = next;
+      persistent = cart.save(storage, lines);
+      if (mode === 'merge') await Account.saveCart(lines);
+      syncOk = true;
+    } catch (error) {
+      syncOk = false;
+    }
     render();
   }
 
@@ -44,6 +83,29 @@ window.IntoTheBlueCatalogueReady.then(catalogue => {
     lines = cart.parse(event.newValue).lines;
     render();
   });
+
+  if (Account) {
+    Account.on((type, detail) => {
+      if (type === 'signed-in') pullAccountBag('merge');
+      else if (type === 'signed-out' && detail && detail.byUser) commit([], { sync: false });
+      else if (type === 'user-changed') {
+        if (Account.user()) pullAccountBag('replace');
+      }
+    });
+    Account.ready.then(user => {
+      if (!user) return;
+      const fromLink = Account.arrival && (Account.arrival.kind === 'confirmed' || Account.arrival.kind === 'recovery');
+      pullAccountBag(fromLink ? 'merge' : 'replace');
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible' || !Account.user() || syncPending) return;
+      pullAccountBag('replace');
+    });
+  }
+
+  const accountPanel = accountDialog && AccountPanel
+    ? AccountPanel.create({ dialog: accountDialog, open: dialog => openModal(dialog) })
+    : null;
 
   // ---- Modal handling: one managed dialog at a time, scroll lock, focus return ----
   let returnTarget = null;
@@ -71,7 +133,7 @@ window.IntoTheBlueCatalogueReady.then(catalogue => {
   const isVisible = el => Boolean(el && el.isConnected && el.getClientRects().length && !el.closest('dialog:not([open]), [hidden], [inert]'));
 
   function fallbackFocusTarget() {
-    return $$('[data-bag-open]').find(isVisible) || (isVisible(menuToggle) ? menuToggle : null);
+    return $$('[data-bag-open], [data-account-open]').find(isVisible) || (isVisible(menuToggle) ? menuToggle : null);
   }
 
   // `trigger` is the page control to return focus to; omit it to keep the current one
@@ -260,6 +322,10 @@ window.IntoTheBlueCatalogueReady.then(catalogue => {
   }));
   // ---- Bag drawer ----
   $$('[data-bag-open]').forEach(button => button.addEventListener('click', () => openModal(bagDialog, button)));
+  $$('[data-account-open]').forEach(button => button.addEventListener('click', () => {
+    openModal(accountDialog, button);
+    if (accountPanel) accountPanel.open(Account && Account.user() ? 'account' : 'signin');
+  }));
   $$('[data-bag-continue]').forEach(button => button.addEventListener('click', () => bagDialog.close()));
 
   // Payment happens on the checkout page (Stripe test mode).
@@ -360,6 +426,7 @@ window.IntoTheBlueCatalogueReady.then(catalogue => {
     ui.checkoutButton.disabled = !cart.purchasable(lines).length;
     ui.subtotal.textContent = described.length ? money(cart.subtotalMinor(lines)) : '';
     ui.storageNotice.hidden = persistent;
+    if (ui.syncNotice) ui.syncNotice.hidden = syncOk;
   }
 
   function restoreFocus(variantId, action) {

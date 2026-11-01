@@ -61,5 +61,6 @@
     }
   }
 
+  root.IntoTheBlueSupabase = Object.freeze({ url: SUPABASE_URL, publishableKey: PUBLISHABLE_KEY });
   root.IntoTheBlueCatalogueReady = load();
 })(self);
