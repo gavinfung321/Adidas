@@ -325,7 +325,7 @@ window.IntoTheBlueCatalogueReady.then(catalogue => {
     if (paidEmail) {
       const line = $('#co-done-email');
       const address = el('strong', '', paidEmail);
-      line.replaceChildren('Your receipt would go to ', address, '. Test payments don’t send emails.');
+      line.replaceChildren('A receipt is on its way to ', address, '.');
     }
     const bagStep = ui.steps.querySelector('[data-step="bag"]');
     bagStep.replaceChildren(el('span', '', 'Bag'));
