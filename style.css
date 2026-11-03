@@ -265,6 +265,10 @@ nav .nav-account{margin-right:-22px}
 @media(max-width:900px){nav .nav-account{margin-right:-8px}}
 .mobile-account{display:none}
 .account-dot{position:absolute;top:6px;right:2px;width:8px;height:8px;border-radius:50%;background:#3a6c9e}
+.account-avatar{display:none;place-items:center;width:28px;height:28px;border-radius:50%;background:#17222a;color:#f5f4ef;font-size:10px;font-weight:700;letter-spacing:.3px;line-height:1}
+.nav-bag.is-signed-in .account-icon{display:none}
+.nav-bag.is-signed-in .account-avatar{display:grid}
+.nav-bag.is-signed-in .account-dot{display:none}
 @media(max-width:600px){nav .nav-account{display:none}.mobile-account{display:inline-grid;margin-left:auto;margin-right:6px}.mobile-bag{margin-left:0}}
 .account-drawer .account-body{padding-top:8px}
 .account-status:empty,.account-error:empty{display:none}
@@ -278,6 +282,9 @@ nav .nav-account{margin-right:-22px}
 .account-lead,.account-note,.account-switch,.account-signed-in{margin:0 0 18px;font-size:14px;line-height:1.55;color:#5d6971}
 .account-signed-in{color:var(--ink)}
 .account-signed-in strong,.account-lead strong{font-weight:700;color:var(--ink)}
+.account-admin{margin:0 0 22px}
+.account-admin[hidden]{display:none!important}
+.account-admin .button{width:100%;justify-content:space-between}
 .account-form{display:grid;gap:14px;margin:0 0 16px}
 .account-field{display:grid;gap:6px;margin:0;font-size:13px;font-weight:600}
 .account-field small{font-weight:500;color:#5d6971}

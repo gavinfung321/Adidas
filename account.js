@@ -169,6 +169,18 @@
     }
   }
 
+  // Pull a fresh JWT so app_metadata (e.g. staff role) set after sign-in shows up.
+  async function refreshUser() {
+    if (!client || !user) return user;
+    try {
+      const { data, error } = await client.auth.refreshSession();
+      if (!error && data.session) user = data.session.user;
+    } catch (error) {
+      // Keep the existing user if refresh fails offline.
+    }
+    return user;
+  }
+
   async function loadCart() {
     if (!client || !user) return [];
     const { data, error } = await client.from('carts').select('lines').eq('user_id', user.id).maybeSingle();
@@ -183,11 +195,13 @@
     if (error) throw new Error('Saved bag could not be updated.');
   }
 
-  // Paid orders only, newest first.
+  // Paid orders for this account only, newest first.
+  // Always filter by user_id so a staff session does not pull every order via staff RLS.
   async function loadOrders() {
     if (!client || !user) return [];
     const { data, error } = await client.from('orders').select(ORDER_SELECT)
-      .eq('status', 'paid').order('created_at', { ascending: false }).limit(20);
+      .eq('status', 'paid').eq('user_id', user.id)
+      .order('created_at', { ascending: false }).limit(20);
     if (error) throw new Error('Orders could not be loaded.');
     return Array.isArray(data) ? data : [];
   }
@@ -199,6 +213,6 @@
     user: () => user,
     on: listener => { listeners.add(listener); return () => listeners.delete(listener); },
     signUp, signIn, resendConfirmation, requestPasswordReset, setPassword, signOut,
-    accessToken, loadCart, saveCart, loadOrders
+    accessToken, refreshUser, loadCart, saveCart, loadOrders
   });
 })(self);

@@ -64,6 +64,50 @@
       $$('[data-account-user]').forEach(el => { el.textContent = email || ''; });
     }
 
+    function isStaffUser(user) {
+      return (user && user.app_metadata && user.app_metadata.role) === 'staff';
+    }
+
+    async function syncAdminEntry() {
+      const wrap = $('[data-account-admin]');
+      if (!wrap) return;
+      if (typeof Account.refreshUser === 'function') {
+        try { await Account.refreshUser(); } catch (e) { /* keep current user */ }
+      }
+      wrap.hidden = !isStaffUser(Account.user());
+    }
+
+    function initialsFromEmail(email) {
+      const local = String(email || '').split('@')[0].trim();
+      if (!local) return '?';
+      const parts = local.split(/[._+\-]+/).filter(Boolean);
+      if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+      return local.slice(0, 2).toUpperCase();
+    }
+
+    function updateAccountAvatar() {
+      const user = Account.user();
+      const signedIn = Boolean(user && user.email);
+      document.querySelectorAll('[data-account-open]').forEach(button => {
+        const avatar = button.querySelector('[data-account-avatar]');
+        const dot = button.querySelector('[data-account-dot]');
+        button.classList.toggle('is-signed-in', signedIn);
+        if (avatar) {
+          if (signedIn) {
+            avatar.hidden = false;
+            avatar.textContent = initialsFromEmail(user.email);
+          } else {
+            avatar.hidden = true;
+            avatar.textContent = '';
+          }
+        }
+        if (dot) dot.hidden = true;
+        button.setAttribute('aria-label', signedIn ? `Account, signed in as ${user.email}` : 'Account');
+        if (signedIn) button.title = user.email;
+        else button.removeAttribute('title');
+      });
+    }
+
     function show(name, { status, error, email, tone } = {}) {
       current = name;
       Object.entries(views).forEach(([key, el]) => { el.hidden = key !== name; });
@@ -79,7 +123,12 @@
       if (heading) {
         try { heading.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
       }
-      $$('[data-account-dot]').forEach(dot => { dot.hidden = !Account.user(); });
+      updateAccountAvatar();
+      if (name === 'account') void syncAdminEntry();
+      else {
+        const wrap = $('[data-account-admin]');
+        if (wrap) wrap.hidden = true;
+      }
     }
 
     function openTo(name, options) {
@@ -162,6 +211,7 @@
       const user = Account.user();
       fillUser(user && user.email);
       show('account', { status: message, tone, error: '' });
+      await syncAdminEntry();
       const state = $('[data-account-orders-state]');
       state.textContent = 'Loading orders…';
       $('[data-account-orders]').replaceChildren();
@@ -270,14 +320,17 @@
     });
 
     Account.on((type) => {
-      if (type === 'signed-in') loadAccountView(dialog.open ? '' : undefined);
-      else if (type === 'signed-out') {
-        $$('[data-account-dot]').forEach(dot => { dot.hidden = true; });
+      if (type === 'signed-in') {
+        updateAccountAvatar();
+        loadAccountView(dialog.open ? '' : undefined);
+      } else if (type === 'signed-out') {
+        updateAccountAvatar();
         if (dialog.open && current === 'account') show('signin');
       } else if (type === 'recovery') openTo('reset', { status: '', error: '' });
     });
 
     Account.ready.then(user => {
+      updateAccountAvatar();
       const arrival = Account.arrival;
       if (arrival && arrival.kind === 'link-error') {
         openTo('expired');
