@@ -8,7 +8,8 @@
   const ASSET_BASE = new URL('../', location.href).href;
   const ORDER_SELECT = 'id,reference,status,fulfillment_status,cancel_reason,cancel_note,amount_total_minor,currency,customer_email,card_brand,card_last4,created_at,paid_at,receipt_sent_at,user_id,updated_at,'
     + 'order_items(product_name,size,quantity,unit_price_minor,line_total_minor,variant_id,variants(products(image,image_alt)))';
-  const PRODUCT_SELECT = 'id,name,description,unit_price_minor,currency,image,image_alt,active,sort_order,variants(id,size,active,sort_order)';
+  const PRODUCT_SELECT = 'id,name,description,unit_price_minor,currency,image,image_alt,active,sort_order,variants(id,size,active,sort_order,stock)';
+  const LOW_STOCK = 2;
   const CANCEL_REASONS = [
     { value: 'customer_request', label: 'Customer request' },
     { value: 'out_of_stock', label: 'Out of stock' },
@@ -85,7 +86,8 @@
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: false,
-      storageKey: 'into-the-blue:staff-auth'
+      // Same key as the shop (account.js) so a staff sign-in there opens this page.
+      storageKey: 'into-the-blue:auth'
     }
   });
 
@@ -203,7 +205,7 @@
     const { data } = await client.auth.getSession();
     user = data.session ? data.session.user : null;
     if (!isStaffUser(user)) {
-      if (data.session) await client.auth.signOut({ scope: 'local' });
+      // Leave a customer session in place. Signing out here would also sign them out of the shop.
       user = null;
       show('signin');
       return false;
@@ -692,12 +694,27 @@
     if (!dialog.open) dialog.showModal();
   }
 
+  function stockCue(value, active) {
+    if (!active || value === '' || value == null) return '';
+    const stock = Number(value);
+    if (!Number.isInteger(stock) || stock < 0) return '';
+    if (stock < 1) return 'out';
+    if (stock <= LOW_STOCK) return 'low';
+    return '';
+  }
+
   function sizeSummary(product) {
     const variants = (product.variants || []).slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
     if (!variants.length) return 'No sizes';
-    const active = variants.filter(variant => variant.active).map(variant => variant.size);
+    const active = variants.filter(variant => variant.active);
     if (!active.length) return 'All sizes off';
-    return active.join(' · ');
+    return active.map(variant => {
+      const cue = stockCue(variant.stock, true);
+      const size = escape(variant.size);
+      if (cue === 'out') return `${size} <span class="stock-cue is-out">out</span>`;
+      if (cue === 'low') return `${size} <span class="stock-cue">low</span>`;
+      return size;
+    }).join(' · ');
   }
 
   function renderProductList() {
@@ -726,7 +743,7 @@
         ${photo}
         <span class="product-row-copy">
           <strong>${escape(product.name)}</strong>
-          <span class="note">${escape(sizeSummary(product))}</span>
+          <span class="note">${sizeSummary(product)}</span>
         </span>
         <span class="product-row-meta">
           <strong>${escape(money(product.unit_price_minor))}</strong>
@@ -755,7 +772,15 @@
     }
     const src = imageUrl(product.image);
     const variants = (product.variants || []).slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-      .map(variant => `<label><input type="checkbox" name="variant-${escape(variant.id)}" ${variant.active ? 'checked' : ''}> ${escape(variant.size)}</label>`)
+      .map(variant => {
+        const stock = Number.isInteger(variant.stock) ? variant.stock : 0;
+        const cue = stockCue(stock, variant.active);
+        return `<div class="variant-stock-row">
+          <label class="check-row"><input type="checkbox" name="variant-${escape(variant.id)}" ${variant.active ? 'checked' : ''}> ${escape(variant.size)}</label>
+          <label class="stock-field">Stock<input type="number" name="stock-${escape(variant.id)}" min="0" step="1" value="${escape(stock)}" required></label>
+          <span class="stock-cue${cue === 'out' ? ' is-out' : ''}" data-stock-cue="${escape(variant.id)}"${cue ? '' : ' hidden'}>${cue}</span>
+        </div>`;
+      })
       .join('');
     const title = $('#product-dialog-title');
     if (title) title.textContent = product.name || 'Edit product';
@@ -764,19 +789,49 @@
         ${src ? `<img src="${escape(src)}" alt="${escape(product.image_alt || product.name)}">` : '<span></span>'}
         <form data-product-form="${escape(product.id)}">
           <label>Name<input name="name" value="${escape(product.name)}" maxlength="80" required></label>
-          <label>Description<textarea name="description" maxlength="1000">${escape(product.description || '')}</textarea></label>
-          <label>Price (HK$)<input name="price" type="number" min="1" step="0.01" value="${escape((product.unit_price_minor / 100).toFixed(2))}" required></label>
-          <label>Sort order<input name="sort_order" type="number" value="${escape(product.sort_order || 0)}"></label>
+          <label>Description<textarea name="description" rows="2" maxlength="1000">${escape(product.description || '')}</textarea></label>
+          <div class="product-split">
+            <label>Price (HK$)<input name="price" type="number" min="1" step="0.01" value="${escape((product.unit_price_minor / 100).toFixed(2))}" required></label>
+            <label>Sort order<input name="sort_order" type="number" value="${escape(product.sort_order || 0)}"></label>
+          </div>
           <label class="check-row"><input type="checkbox" name="active" ${product.active ? 'checked' : ''}> Active in the shop</label>
-          <p class="note">Sizes</p>
+          <p class="note">Sizes and stock</p>
           <div class="variants">${variants}</div>
           <div class="actions">
             <button class="button dark small" type="submit">Save product</button>
             <button class="button small" type="button" data-product-close>Cancel</button>
+            <p class="product-flash" data-product-flash role="status" hidden></p>
           </div>
         </form>
       </div>`;
+    const form = detail.querySelector('[data-product-form]');
+    if (form) {
+      form.addEventListener('input', () => {
+        setProductFlash(form, '');
+        syncStockCues(form);
+      });
+    }
     if (!dialog.open) dialog.showModal();
+  }
+
+  function syncStockCues(form) {
+    form.querySelectorAll('[data-stock-cue]').forEach(cue => {
+      const id = cue.dataset.stockCue;
+      const box = form.querySelector(`[name="variant-${id}"]`);
+      const input = form.querySelector(`[name="stock-${id}"]`);
+      const label = stockCue(input ? input.value : '', box ? box.checked : false);
+      cue.hidden = !label;
+      cue.textContent = label;
+      cue.classList.toggle('is-out', label === 'out');
+    });
+  }
+
+  function setProductFlash(form, message, isError) {
+    const flash = form && form.querySelector('[data-product-flash]');
+    if (!flash) return;
+    flash.hidden = !message;
+    flash.textContent = message || '';
+    flash.classList.toggle('is-error', Boolean(message && isError));
   }
 
   async function loadProducts() {
@@ -1206,6 +1261,7 @@
       const id = productForm.dataset.productForm;
       const price = Math.round(Number(productForm.price.value) * 100);
       if (!Number.isInteger(price) || price < 100) {
+        setProductFlash(productForm, 'Enter a price of at least HK$1.00.', true);
         setMessage('', 'Enter a price of at least HK$1.00.');
         return;
       }
@@ -1216,16 +1272,32 @@
         active: productForm.active.checked,
         sort_order: Number(productForm.sort_order.value) || 0
       };
+      const variantBoxes = [...productForm.querySelectorAll('input[type="checkbox"][name^="variant-"]')];
+      const variantUpdates = [];
+      for (const box of variantBoxes) {
+        const variantId = box.name.slice('variant-'.length);
+        const stockInput = productForm.querySelector(`[name="stock-${variantId}"]`);
+        const stock = stockInput ? Math.round(Number(stockInput.value)) : 0;
+        if (!Number.isInteger(stock) || stock < 0) {
+          setProductFlash(productForm, 'Stock must be a whole number of 0 or more.', true);
+          setMessage('', 'Stock must be a whole number of 0 or more.');
+          return;
+        }
+        variantUpdates.push({ variantId, active: box.checked, stock });
+      }
+      setProductFlash(productForm, 'Saving…');
       const { error } = await client.from('products').update(patch).eq('id', id);
       if (error) {
+        setProductFlash(productForm, error.message || 'Product could not be saved.', true);
         setMessage('', error.message || 'Product could not be saved.');
         return;
       }
-      const variantBoxes = [...productForm.querySelectorAll('input[type="checkbox"][name^="variant-"]')];
-      for (const box of variantBoxes) {
-        const variantId = box.name.slice('variant-'.length);
-        const { error: variantError } = await client.from('variants').update({ active: box.checked }).eq('id', variantId);
+      for (const row of variantUpdates) {
+        const { error: variantError } = await client.from('variants')
+          .update({ active: row.active, stock: row.stock })
+          .eq('id', row.variantId);
         if (variantError) {
+          setProductFlash(productForm, variantError.message || 'A size could not be saved.', true);
           setMessage('', variantError.message || 'A size could not be saved.');
           return;
         }
@@ -1234,12 +1306,18 @@
         p_action: 'product_saved',
         p_entity: 'products',
         p_entity_id: id,
-        p_detail: { unit_price_minor: price, active: patch.active }
+        p_detail: { unit_price_minor: price, active: patch.active, stock: true }
       });
       setMessage('Product saved. Refresh the shop to see it.', '');
-      selectedProductId = null;
-      closeProductDialog();
-      await openView('products');
+      setProductFlash(productForm, 'Saved.');
+      const title = $('#product-dialog-title');
+      if (title) title.textContent = patch.name || 'Edit product';
+      const { data: refreshed, error: reloadError } = await client.from('products')
+        .select(PRODUCT_SELECT).order('sort_order');
+      if (!reloadError) {
+        productsCache = refreshed || [];
+        renderProductList();
+      }
     }
   });
 

@@ -14,14 +14,22 @@
 
   // `available: false` keeps a product resolvable (so a bag can name it) but not purchasable.
   function product(id, { variants, available = true, ...fields }) {
-    const sizes = variants || SIZES.map(size => ({ id: `${id}-${size.toLowerCase()}`, size }));
+    const sizes = variants || SIZES.map(size => ({ id: `${id}-${size.toLowerCase()}`, size, stock: 10 }));
     return Object.freeze({
       id,
       ...fields,
       available,
       currency: CURRENCY,
       demoPricing: true,
-      variants: Object.freeze(sizes.map(v => Object.freeze({ id: v.id, size: v.size, available: available && v.available !== false })))
+      variants: Object.freeze(sizes.map(v => {
+        const stock = Number.isInteger(v.stock) && v.stock >= 0 ? v.stock : 10;
+        return Object.freeze({
+          id: v.id,
+          size: v.size,
+          stock,
+          available: available && v.available !== false && stock > 0
+        });
+      }))
     });
   }
 

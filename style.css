@@ -256,6 +256,7 @@ button{color:inherit;-webkit-appearance:none;appearance:none;border-radius:0}
 @media (min-width:861px){.winter-grid:has(>.winter-card[hidden]){grid-template-columns:repeat(auto-fit,calc((100% - 50px)/3));justify-content:center}}
 .size-options input:disabled+span{cursor:not-allowed;color:#8f9aa1;border-color:#c6cdcf;text-decoration:line-through}
 .size-options label:has(input:disabled){cursor:not-allowed}
+.size-options label.is-sold-out span{width:auto;min-width:48px;padding:0 10px;font-size:11px;text-decoration:none;white-space:nowrap}
 .bag-form button[type=submit]:disabled{cursor:not-allowed;opacity:.5;box-shadow:none;transform:none}
 .bag-line.is-unavailable .bag-line-photo{opacity:.45}
 .bag-unavailable{margin:8px 0 0;font-size:12px;line-height:1.5;color:#a3261b}

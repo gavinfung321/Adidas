@@ -169,14 +169,16 @@ window.IntoTheBlueCatalogueReady.then(catalogue => {
   function renderSizeOptions(form, product) {
     const container = form.querySelector('[data-size-options]');
     container.replaceChildren(...product.variants.map(variant => {
+      const soldOut = variant.available === false;
       const label = document.createElement('label');
+      if (soldOut) label.classList.add('is-sold-out');
       const input = document.createElement('input');
       input.type = 'radio';
       input.name = 'variant';
       input.value = variant.id;
-      input.disabled = variant.available === false;
+      input.disabled = soldOut;
       const text = document.createElement('span');
-      text.textContent = variant.size;
+      text.textContent = soldOut ? `${variant.size} · Sold out` : variant.size;
       label.append(input, text);
       return label;
     }));
@@ -210,7 +212,7 @@ window.IntoTheBlueCatalogueReady.then(catalogue => {
     const result = cart.add(lines, product.id, variantId);
     const { variant } = cart.resolve(product.id, variantId) || {};
     if (result.status === 'invalid' || result.status === 'unavailable') {
-      setSizeError(form, 'That size isn’t available in this demo. Please choose another.');
+      setSizeError(form, 'That size is sold out in this demo. Please choose another.');
       return;
     }
     if (result.status === 'limit') {
@@ -395,11 +397,12 @@ window.IntoTheBlueCatalogueReady.then(catalogue => {
     plus.type = 'button';
     plus.dataset.action = 'increase';
     plus.setAttribute('aria-label', `Increase quantity of ${label}`);
-    plus.disabled = line.quantity >= Cart.MAX_QUANTITY;
+    const stockMax = Number.isInteger(line.stock) ? line.stock : Cart.MAX_QUANTITY;
+    plus.disabled = line.quantity >= Math.min(Cart.MAX_QUANTITY, stockMax);
     qty.append(minus, value, plus);
 
     info.append(name, size, unit, qty);
-    if (line.quantity >= Cart.MAX_QUANTITY) {
+    if (line.quantity >= Math.min(Cart.MAX_QUANTITY, Number.isInteger(line.stock) ? line.stock : Cart.MAX_QUANTITY)) {
       info.append(el('p', 'bag-limit', `Demo limit: ${Cart.MAX_QUANTITY} per size. This is not a stock limit.`));
     }
     info.append(remove);

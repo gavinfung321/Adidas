@@ -7,7 +7,7 @@
   // Publishable keys are meant for browser code; row-level security limits it to reading the catalogue.
   const PUBLISHABLE_KEY = 'sb_publishable_bL1u8hzI8CY6qFqwBtJWMA_fP4VulzL';
   const SELECT = 'id,name,description,unit_price_minor,currency,image,image_alt,active,sort_order,'
-    + 'product_images(position,src,label,alt),variants(id,size,active,sort_order)';
+    + 'product_images(position,src,label,alt),variants(id,size,active,sort_order,stock)';
   const TIMEOUT_MS = 3000;
 
   const fallback = root.IntoTheBlueCatalogue;
@@ -23,7 +23,15 @@
     const variants = (Array.isArray(row.variants) ? row.variants : [])
       .filter(v => v && ID.test(v.id) && typeof v.size === 'string')
       .sort(bySortOrder)
-      .map(v => ({ id: v.id, size: text(v.size, 8), available: v.active === true }));
+      .map(v => {
+        const stock = Number.isInteger(v.stock) && v.stock >= 0 ? v.stock : 0;
+        return {
+          id: v.id,
+          size: text(v.size, 8),
+          stock,
+          available: v.active === true && stock > 0
+        };
+      });
     if (!variants.length) return null;
     const photos = (Array.isArray(row.product_images) ? row.product_images : [])
       .filter(photo => photo && ASSET.test(photo.src))

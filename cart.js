@@ -31,18 +31,23 @@
       return lines.find(line => line.variantId === variantId) || null;
     }
 
-    // Products switched off in the database stay resolvable but can't be bought.
+    // Products switched off or sold out stay resolvable but can't be bought.
     const isAvailable = entry => entry.variant.available !== false;
+    const stockCap = entry => {
+      const stock = Number.isInteger(entry.variant.stock) ? entry.variant.stock : MAX_QUANTITY;
+      return Math.max(0, Math.min(MAX_QUANTITY, stock));
+    };
 
     function add(lines, productId, variantId) {
       const entry = resolve(productId, variantId);
       if (!entry) return { status: 'invalid', lines };
-      if (!isAvailable(entry)) return { status: 'unavailable', lines };
+      if (!isAvailable(entry) || stockCap(entry) < 1) return { status: 'unavailable', lines };
       const existing = findLine(lines, variantId);
+      const cap = stockCap(entry);
       if (!existing) {
         return { status: 'added', quantity: 1, lines: [...lines, { productId, variantId, quantity: 1 }] };
       }
-      if (existing.quantity >= MAX_QUANTITY) return { status: 'limit', quantity: existing.quantity, lines };
+      if (existing.quantity >= cap) return { status: 'limit', quantity: existing.quantity, lines };
       const quantity = existing.quantity + 1;
       return {
         status: 'incremented',
@@ -54,6 +59,10 @@
     function setQuantity(lines, variantId, quantity) {
       const existing = findLine(lines, variantId);
       if (!existing || !isValidQuantity(quantity)) return { status: 'invalid', lines };
+      const entry = resolve(existing.productId, variantId);
+      if (!entry) return { status: 'invalid', lines };
+      const cap = stockCap(entry);
+      if (quantity > cap) return { status: 'limit', quantity: existing.quantity, lines };
       return {
         status: 'updated',
         quantity,
@@ -82,10 +91,16 @@
           imageAlt: product.imageAlt,
           quantity: line.quantity,
           available: isAvailable({ product, variant }),
+          stock: Number.isInteger(variant.stock) ? variant.stock : MAX_QUANTITY,
           unitPriceMinor: product.unitPriceMinor,
           lineTotalMinor: product.unitPriceMinor * line.quantity
         };
       });
+    }
+
+    function maxPurchasable(productId, variantId) {
+      const entry = resolve(productId, variantId);
+      return entry ? stockCap(entry) : 0;
     }
 
     // Lines that can go to checkout.
@@ -103,16 +118,21 @@
       let repaired = false;
       if (!Array.isArray(rows)) return { lines: result, repaired: true };
       rows.forEach(row => {
-        if (!row || typeof row !== 'object' || !resolve(row.productId, row.variantId) || !isValidQuantity(row.quantity)) {
+        const entry = row && typeof row === 'object' ? resolve(row.productId, row.variantId) : null;
+        if (!entry || !isValidQuantity(row.quantity)) {
           repaired = true;
           return;
         }
+        const cap = stockCap(entry);
         const existing = findLine(result, row.variantId);
         if (existing) {
           repaired = true;
-          existing.quantity = Math.min(MAX_QUANTITY, existing.quantity + row.quantity);
+          existing.quantity = Math.min(cap, existing.quantity + row.quantity);
         } else {
-          result.push({ productId: row.productId, variantId: row.variantId, quantity: row.quantity });
+          const quantity = Math.min(cap, row.quantity);
+          if (quantity !== row.quantity) repaired = true;
+          if (quantity >= MIN_QUANTITY) result.push({ productId: row.productId, variantId: row.variantId, quantity });
+          else repaired = true;
         }
       });
       return { lines: result, repaired };
@@ -163,7 +183,7 @@
       }
     }
 
-    return { resolve, add, setQuantity, remove, totalUnits, subtotalMinor, describe, purchasable, validate, merge, parse, serialize, load, save };
+    return { resolve, add, setQuantity, remove, totalUnits, subtotalMinor, describe, purchasable, maxPurchasable, validate, merge, parse, serialize, load, save };
   }
 
   return { STORAGE_KEY, SCHEMA_VERSION, MIN_QUANTITY, MAX_QUANTITY, isValidQuantity, createCartModel };
