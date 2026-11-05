@@ -13,7 +13,8 @@ window.IntoTheBlueCatalogueReady.then(catalogue => {
   const winterDialog = $('#winter-dialog');
   const bagDialog = $('#bag-dialog');
   const accountDialog = $('#account-dialog');
-  const managedDialogs = [purchaseDialog, winterDialog, bagDialog, accountDialog].filter(Boolean);
+  const accountEditDialog = $('#account-edit-dialog');
+  const managedDialogs = [purchaseDialog, winterDialog, bagDialog, accountDialog, accountEditDialog].filter(Boolean);
   const menuToggle = $('.mobile-menu-toggle');
   const mobileMenu = $('#mobile-menu');
 

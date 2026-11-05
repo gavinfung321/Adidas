@@ -13,7 +13,13 @@
   const arrival = fragment.get('error_code') || fragment.get('error')
     ? { kind: 'link-error', code: fragment.get('error_code') || fragment.get('error') }
     : fragment.get('access_token')
-      ? { kind: fragment.get('type') === 'recovery' ? 'recovery' : 'confirmed' }
+      ? {
+        kind: fragment.get('type') === 'recovery'
+          ? 'recovery'
+          : fragment.get('type') === 'email_change'
+            ? 'email-changed'
+            : 'confirmed'
+      }
       : null;
 
   let client = null;
@@ -71,6 +77,7 @@
     if (/invalid login credentials/i.test(error.message || '')) return 'invalid_credentials';
     if (/email not confirmed/i.test(error.message || '')) return 'email_not_confirmed';
     if (error.code === 'same_password' || /same password|should be different from the old/i.test(error.message || '')) return 'same_password';
+    if (error.code === 'email_exists' || /already registered|already been registered/i.test(error.message || '')) return 'email_exists';
     return 'unknown';
   }
 
@@ -197,6 +204,125 @@
 
   // Paid orders for this account only, newest first.
   // Always filter by user_id so a staff session does not pull every order via staff RLS.
+  const PROFILE_FIELDS = 'display_name,phone,address_line,district,avatar_path';
+  const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  const PHOTO_LIMIT = 1048576;
+
+  function clip(value, max) {
+    return String(value || '').trim().slice(0, max);
+  }
+
+  function functionsBase() {
+    const local = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
+    return local
+      ? 'http://127.0.0.1:54321/functions/v1'
+      : 'https://pryofarsgkhfbajmdeyy.supabase.co/functions/v1';
+  }
+
+  function emptyProfile() {
+    return { display_name: '', phone: '', address_line: '', district: '', avatar_path: null };
+  }
+
+  async function loadProfile() {
+    if (!client || !user) return { error: 'sign_in_required' };
+    const { data, error } = await client.from('profiles').select(PROFILE_FIELDS).eq('user_id', user.id).maybeSingle();
+    if (error) return { error: codeOf(error) };
+    return { profile: data || emptyProfile() };
+  }
+
+  async function saveProfile(fields) {
+    if (!client || !user) return unavailable;
+    const row = {
+      user_id: user.id,
+      display_name: clip(fields.displayName, 80),
+      phone: clip(fields.phone, 30),
+      address_line: clip(fields.addressLine, 120),
+      district: clip(fields.district, 40)
+    };
+    const { error } = await client.from('profiles').upsert(row, { onConflict: 'user_id', defaultToNull: false });
+    return error ? { error: codeOf(error) } : { status: 'saved', profile: { ...emptyProfile(), ...row } };
+  }
+
+  async function avatarUrl(path) {
+    if (!client || !path) return null;
+    const { data, error } = await client.storage.from('avatars').createSignedUrl(path, 3600);
+    return !error && data && data.signedUrl ? data.signedUrl : null;
+  }
+
+  async function uploadAvatar(file) {
+    if (!client || !user) return unavailable;
+    if (!file || !PHOTO_TYPES.includes(file.type)) return { error: 'photo_type' };
+    if (file.size > PHOTO_LIMIT) return { error: 'photo_too_large' };
+    const path = user.id + '/avatar';
+    const { error } = await client.storage.from('avatars').upload(path, file, {
+      upsert: true,
+      contentType: file.type,
+      cacheControl: '60'
+    });
+    if (error) return { error: codeOf(error) };
+    const { error: rowError } = await client.from('profiles').upsert(
+      { user_id: user.id, avatar_path: path },
+      { onConflict: 'user_id', defaultToNull: false }
+    );
+    return rowError ? { error: codeOf(rowError) } : { status: 'saved', path };
+  }
+
+  async function removeAvatar() {
+    if (!client || !user) return unavailable;
+    const path = user.id + '/avatar';
+    await client.storage.from('avatars').remove([path]);
+    const { error } = await client.from('profiles').update({ avatar_path: null }).eq('user_id', user.id);
+    return error ? { error: codeOf(error) } : { status: 'removed' };
+  }
+
+  async function changePassword(current, next) {
+    if (!client || !user || !user.email) return unavailable;
+    if (String(next || '').length < 8) return { error: 'weak_password' };
+    const { error: currentError } = await client.auth.signInWithPassword({ email: user.email, password: current });
+    if (currentError) {
+      const code = codeOf(currentError);
+      return { error: code === 'invalid_credentials' ? 'current_password' : code };
+    }
+    return setPassword(next);
+  }
+
+  async function changeEmail(email) {
+    if (!client || !user) return unavailable;
+    try {
+      const { error } = await client.auth.updateUser(
+        { email },
+        { emailRedirectTo: siteUrl() }
+      );
+      if (error) return { error: codeOf(error) };
+      return { status: 'check-email' };
+    } catch (error) {
+      return { error: codeOf(error) };
+    }
+  }
+
+  async function deleteAccount() {
+    if (!client || !user) return unavailable;
+    const token = await accessToken();
+    if (!token) return { error: 'sign_in_required' };
+    try {
+      const response = await fetch(functionsBase() + '/delete-account', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + token,
+          apikey: settings.publishableKey,
+          'Content-Type': 'application/json'
+        },
+        body: '{}'
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) return { error: data && data.error ? data.error : 'unknown' };
+    } catch (error) {
+      return { error: codeOf(error) };
+    }
+    await signOut();
+    return { status: 'deleted' };
+  }
+
   async function loadOrders() {
     if (!client || !user) return [];
     const { data, error } = await client.from('orders').select(ORDER_SELECT)
@@ -213,6 +339,7 @@
     user: () => user,
     on: listener => { listeners.add(listener); return () => listeners.delete(listener); },
     signUp, signIn, resendConfirmation, requestPasswordReset, setPassword, signOut,
-    accessToken, refreshUser, loadCart, saveCart, loadOrders
+    accessToken, refreshUser, loadCart, saveCart, loadOrders,
+    loadProfile, saveProfile, avatarUrl, uploadAvatar, removeAvatar, changePassword, changeEmail, deleteAccount
   });
 })(self);

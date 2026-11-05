@@ -970,6 +970,54 @@ button.linkish {
   color: var(--ok);
 }
 .customer-flash[hidden] { display: none !important; }
+.customer-photo-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.customer-photo {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #e9edef;
+  overflow: hidden;
+  flex: none;
+}
+.customer-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.customer-photo-pick { position: relative; display: block; width: 64px; height: 64px; flex: none; border-radius: 50%; cursor: pointer; }
+.customer-photo-pick:focus-within { outline: 2px solid #2365c9; outline-offset: 3px; }
+.account-photo-edit { position: absolute; right: -2px; bottom: -2px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #f5f4ef; color: #17222a; border: 1.5px solid #17222a; pointer-events: none; }
+.account-photo-edit svg { width: 12px; height: 12px; display: block; }
+.customer-photo-btn {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.account-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  border: 0;
+}
+.customer-facts { display: grid; gap: 8px; margin: 0; }
+.customer-facts div { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 8px; }
+.customer-facts dt { margin: 0; font-size: 12px; font-weight: 600; color: var(--muted); }
+.customer-facts dd { margin: 0; font-size: 14px; }
 .tag-fieldset {
   margin: 0;
   padding: 0;

@@ -583,11 +583,12 @@
       if (customerFilter.tags && customerFilter.tags !== 'untagged' && !tags.includes(customerFilter.tags)) return false;
       if (q) {
         const inEmail = row.email.includes(q);
+        const inName = String(row.account && row.account.display_name || '').toLowerCase().includes(q);
         const inTags = tags.some(tag => {
           const label = customerTagLabel(tag).toLowerCase();
           return tag.includes(q) || label.includes(q);
         });
-        if (!inEmail && !inTags) return false;
+        if (!inEmail && !inName && !inTags) return false;
       }
       return true;
     });
@@ -600,12 +601,16 @@
       $('[data-customers-table]').innerHTML = '<p class="empty">No customers match these filters.</p>';
       return;
     }
-    $('[data-customers-table]').innerHTML = `<table><thead><tr><th>Email</th><th>Orders</th><th>Total</th><th>Last order</th><th>Tags</th></tr></thead><tbody>${
+    $('[data-customers-table]').innerHTML = `<table><thead><tr><th>Customer</th><th>Orders</th><th>Total</th><th>Last order</th><th>Tags</th></tr></thead><tbody>${
       filtered.map(row => {
         const profile = profiles[row.email] || {};
         const email = escape(row.email);
+        const name = String(row.account && row.account.display_name || '').trim();
+        const who = name
+          ? `<strong class="order-ref">${escape(name)}</strong><span class="note">${email}</span>`
+          : `<strong class="order-ref">${email}</strong>`;
         return `<tr class="is-clickable" data-open-customer="${email}" tabindex="0" role="button" aria-label="Open customer ${email}">
-          <td><strong class="order-ref">${email}</strong></td>
+          <td>${who}</td>
           <td>${row.orders.length}</td>
           <td>${escape(money(row.total))}</td>
           <td>${escape(dateOf(row.last))}</td>
@@ -623,11 +628,14 @@
     (data || []).forEach(order => {
       const email = (order.customer_email || '').trim().toLowerCase();
       if (!email) return;
-      const row = byEmail.get(email) || { email, orders: [], total: 0, last: null, hasAccount: false };
+      const row = byEmail.get(email) || { email, orders: [], total: 0, last: null, hasAccount: false, userId: null, account: null };
       row.orders.push(order);
       row.total += order.amount_total_minor || 0;
       row.last = row.last || order.paid_at || order.created_at;
-      if (order.user_id) row.hasAccount = true;
+      if (order.user_id) {
+        row.hasAccount = true;
+        if (!row.userId) row.userId = order.user_id;
+      }
       byEmail.set(email, row);
     });
     const customers = [...byEmail.values()].sort((a, b) => String(b.last).localeCompare(String(a.last)));
@@ -636,6 +644,14 @@
     if (emails.length) {
       const { data: profileRows } = await client.from('customer_profiles').select('email,note,tags').in('email', emails);
       (profileRows || []).forEach(row => { profiles[row.email.toLowerCase()] = row; });
+    }
+    const userIds = customers.map(row => row.userId).filter(Boolean);
+    if (userIds.length) {
+      const { data: accountRows } = await client.from('profiles')
+        .select('user_id,display_name,phone,address_line,district,avatar_path')
+        .in('user_id', userIds);
+      const byUser = new Map((accountRows || []).map(row => [row.user_id, row]));
+      customers.forEach(row => { row.account = byUser.get(row.userId) || null; });
     }
 
     customersCache = { customers, profiles };
@@ -669,12 +685,30 @@
     const tagChoices = CUSTOMER_TAGS.map(row =>
       `<label class="tag-chip"><input type="checkbox" name="tag" value="${escape(row.value)}"${selected.has(row.value) ? ' checked' : ''}> ${escape(row.label)}</label>`
     ).join('');
+    const account = customer.account || null;
     const title = $('#customer-dialog-title');
-    if (title) title.textContent = customer.email;
+    if (title) title.textContent = (account && account.display_name) || customer.email;
     detail.dataset.email = customer.email;
+    if (customer.userId) detail.dataset.userId = customer.userId;
+    else delete detail.dataset.userId;
+    const photoBlock = customer.userId ? `
+        <div class="customer-photo-row">
+          <label class="customer-photo-pick">
+            <span class="customer-photo" data-customer-photo></span>
+            <span class="account-photo-edit" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
+            <input class="account-file" type="file" accept="image/jpeg,image/png,image/webp" data-staff-photo aria-label="Edit photo">
+          </label>
+          <button class="customer-photo-btn" type="button" data-staff-photo-remove ${account && account.avatar_path ? '' : 'hidden'}>Remove photo</button>
+        </div>
+        <dl class="customer-facts">
+          <div><dt>Name</dt><dd>${escape((account && account.display_name) || '—')}</dd></div>
+          <div><dt>Phone</dt><dd>${escape((account && account.phone) || '—')}</dd></div>
+          <div><dt>Address</dt><dd>${escape([account && account.address_line, account && account.district].filter(Boolean).join(', ') || '—')}</dd></div>
+        </dl>` : '';
     detail.innerHTML = `
       <div class="customer-sheet">
         <p class="customer-summary">${customer.hasAccount ? 'Has an account' : 'Guest checkout'} · ${customer.orders.length} paid orders · ${escape(money(customer.total))}</p>
+        ${photoBlock}
         <form class="customer-form" data-customer-form>
           <label><span>Note</span><textarea name="note" maxlength="2000" rows="4" placeholder="Staff note">${escape(profile.note || '')}</textarea></label>
           <fieldset class="tag-fieldset">
@@ -692,6 +726,72 @@
         </div>
       </div>`;
     if (!dialog.open) dialog.showModal();
+    void paintCustomerPhotoFromPath(account && account.avatar_path);
+  }
+
+  function paintCustomerPhoto(url) {
+    const el = $('[data-customer-photo]');
+    if (!el) return;
+    el.replaceChildren();
+    if (!url) return;
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = '';
+    el.append(img);
+  }
+
+  async function signedAvatar(path) {
+    if (!path) return '';
+    const { data, error } = await client.storage.from('avatars').createSignedUrl(path, 3600);
+    return !error && data && data.signedUrl ? data.signedUrl : '';
+  }
+
+  async function paintCustomerPhotoFromPath(path) {
+    paintCustomerPhoto(path ? await signedAvatar(path) : '');
+  }
+
+  async function setCustomerPhoto(userId, file) {
+    const types = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!file || !types.includes(file.type)) {
+      setMessage('', 'Use a JPEG, PNG, or WebP photo.');
+      return;
+    }
+    if (file.size > 1048576) {
+      setMessage('', 'That photo is over 1 MB.');
+      return;
+    }
+    const path = userId + '/avatar';
+    const { error } = await client.storage.from('avatars').upload(path, file, {
+      upsert: true,
+      contentType: file.type,
+      cacheControl: '60'
+    });
+    if (error) {
+      setMessage('', error.message || 'Photo could not be saved.');
+      return;
+    }
+    const { error: rowError } = await client.from('profiles').upsert(
+      { user_id: userId, avatar_path: path },
+      { onConflict: 'user_id', defaultToNull: false }
+    );
+    if (rowError) {
+      setMessage('', rowError.message || 'Photo could not be saved.');
+      return;
+    }
+    setMessage('Photo saved.', '');
+    await loadCustomers();
+  }
+
+  async function clearCustomerPhoto(userId) {
+    const path = userId + '/avatar';
+    await client.storage.from('avatars').remove([path]);
+    const { error } = await client.from('profiles').update({ avatar_path: null }).eq('user_id', userId);
+    if (error) {
+      setMessage('', error.message || 'Photo could not be removed.');
+      return;
+    }
+    setMessage('Photo removed.', '');
+    await loadCustomers();
   }
 
   function stockCue(value, active) {
@@ -1210,6 +1310,26 @@
     if (!row || event.target !== row) return;
     event.preventDefault();
     row.click();
+  });
+
+  document.addEventListener('change', async event => {
+    const input = event.target.closest('[data-staff-photo]');
+    if (!input) return;
+    const detail = input.closest('[data-customer-detail]');
+    const userId = detail && detail.dataset.userId;
+    const file = input.files && input.files[0];
+    input.value = '';
+    if (!userId || !file) return;
+    await setCustomerPhoto(userId, file);
+  });
+
+  document.addEventListener('click', async event => {
+    const remove = event.target.closest('[data-staff-photo-remove]');
+    if (!remove) return;
+    const detail = remove.closest('[data-customer-detail]');
+    const userId = detail && detail.dataset.userId;
+    if (!userId) return;
+    await clearCustomerPhoto(userId);
   });
 
   document.addEventListener('submit', async event => {
